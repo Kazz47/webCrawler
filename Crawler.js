@@ -25,6 +25,7 @@ function printSite(dom, url) {
 	var addresses = ziprip.extract(dom, url);
 	if (addresses.length > 0) {
 		for (var i=0; i<addresses.length; i++) {
+			// Write results to database.
 			console.log(addresses[i].title + " : " + addresses[i].postcode);
 		}
 	}
