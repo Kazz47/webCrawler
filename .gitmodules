@@ -1,0 +1,3 @@
+[submodule "modules/ziprip"]
+	path = modules/ziprip
+	url = https://github.com/Kazz47/ziprip.git
