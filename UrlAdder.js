@@ -8,6 +8,7 @@ var jsURL = require("url");
 var crypto = require("crypto");
 var flr = require("./FileLineReader");
 
+var commonMediaFiles = ["zip", "pdf", "mp3", "jpg", "rar", "exe", "wvm", "doc", "avi", "ppt", "mpg", "tif", "wav", "mov", "psd", "wma", "sitx", "sit", "esp", "cdr", "ai", "xls", "mp4", "txt", "m4a", "rmvb", "bmp", "pps", "aif", "pub", "dwg", "gif", "qbb", "mpeg", "indd", "swf", "asf", "png", "dat", "rm", "mdb", "chm", "jar", "dvf", "dss", "dmg", "iso", "flv", "wpd", "cda", "m4b", "7z", "gz", "fla", "qxd", "rtf", "msi", "jpg", "jpeg", "m4v", "ogg", "torrent", "mp2", "bat", "sql"];
 function UrlAdder() {
 	this.DAO = require("./dao");
 	this.addDAO = new this.DAO();
@@ -19,7 +20,7 @@ UrlAdder.prototype.addUrls = function(urls) {
 	var self = this;
 	
 	var running = 0;
-	var limit = 10;
+	var limit = 5;
 	function urlAddLauncher() {
 		while (running < limit && urls.length > 0) {
 			var url = urls.shift();
@@ -46,14 +47,20 @@ UrlAdder.prototype.addUrl = function(url, callback) {
 			hashIndex = url.indexOf("#");
 			if (hashIndex > 0) url = url.substring(0, hashIndex);
 			url = url.trim().replace(/\/+$/, "");
-			var urlHash = crypto.createHash("md5").update(url).digest("hex");
-			var urlObj = {Hash: urlHash, URL: url, DomainName: jsURL.parse(url).hostname};
-			var query = connection.query("INSERT INTO URL SET ?", urlObj, function(err, result) {
-				if(err && err.code != "ER_DUP_ENTRY") console.log("Add URL: " + err.code);
+			var regex = /.+\.([^?]+)(\?|$)/;
+			var result = url.match(regex);
+			if (commonMediaFiles.indexOf(result[1]) < 0) {
+				var urlHash = crypto.createHash("md5").update(url).digest("hex");
+				var urlObj = {Hash: urlHash, URL: url, DomainName: jsURL.parse(url).hostname};
+				var query = connection.query("INSERT INTO URL SET ?", urlObj, function(err, result) {
+					if(err && err.code != "ER_DUP_ENTRY") console.log("Add URL: " + err.code);
+					connection.release();
+					callback();
+				});
+			} else {
 				connection.release();
 				callback();
-			});
-			//console.log("Query: " + query.sql);
+			}
 		}
 	});
 }

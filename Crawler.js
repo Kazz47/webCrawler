@@ -7,6 +7,7 @@ var UrlAdder = require("./UrlAdder");
 console.log("Starting...");
 var crawlerDAO = new DAO();
 var pool = crawlerDAO.pool;
+
 crawlOutdatedPages();
 
 function URL(id, url) {
@@ -37,26 +38,31 @@ function crawlOutdatedPages(depth) {
 					console.log(err);
 					crawlerDAO.close();
 				} else {
-					if (rows.length === 0) crawlerDAO.close();
-					var running = 0;
-					var limit = 10;
-					function urlParseLauncher() {
-						while (running < limit && rows.length > 0) {
-							var next = rows.shift();
-							var url = new URL(next.Id, next.URL);
-							parseUrl(url, function() {
-								running--;
-								if (rows.length > 0) {
-									urlParseLauncher();
-								} else if (running == 0) {
-									console.log("Done!");
-									crawlerDAO.close();
-								}
-							});
-							running++;
+					if (rows.length === 0) {
+						setTimeout(crawlOutdatedPages, 2000);
+						//crawlerDAO.close();
+					} else {
+						var running = 0;
+						var limit = 5;
+						function urlParseLauncher() {
+							while (running < limit && rows.length > 0) {
+								var next = rows.shift();
+								var url = new URL(next.Id, next.URL);
+								parseUrl(url, function() {
+									running--;
+									if (rows.length > 0) {
+										urlParseLauncher();
+									} else if (running == 0) {
+										console.log("Done!");
+										crawlOutdatedPages();
+										//crawlerDAO.close();
+									}
+								});
+								running++;
+							}
 						}
+						urlParseLauncher();
 					}
-					urlParseLauncher();
 				}
 				connection.release();
 			});
@@ -157,34 +163,42 @@ function addNewWebpage(webpage, callback) {
 			console.log("Add Webpage (Connection): " + err);
 			callback();
 		} else {
-			var webpageSQL = {URLId: webpage.URLId, Title: webpage.Title, Description: webpage.Description};
-			var query = connection.query("INSERT INTO Webpage SET ?", webpageSQL, function(err, result) {
+			connection.query("SELECT COUNT(*) AS c FROM Webpage", function(err , result) {
 				connection.release();
-				if(err) {
-					console.log("Add Webpage: " + err);
+				if (result[0].c > 494) {
+					console.log("Too many pages!");
 					callback();
 				} else {
-					//console.log("Result: " + result.insertId);
-					if (webpage.Keywords.length === 0) callback();
-					var running = 0;
-					var limit = 10;
-					function keywordCheckLauncher() {
-						while (running < limit && webpage.Keywords.length > 0) {
-							var next = webpage.Keywords.shift();
-							var url = new URL(next.Id, next.URL);
-							checkKeyword(next, result.insertId, function() {
-								running--;
-								if (webpage.Keywords.length > 0) {
-									keywordCheckLauncher();
-								} else if (running == 0) {
-									console.log("Done checking keywords.");
-									callback();
+					var webpageSQL = {URLId: webpage.URLId, Title: webpage.Title, Description: webpage.Description};
+					var query = connection.query("INSERT INTO Webpage SET ?", webpageSQL, function(err, result) {
+						connection.release();
+						if(err) {
+							console.log("Add Webpage: " + err);
+							callback();
+						} else {
+							//console.log("Result: " + result.insertId);
+							if (webpage.Keywords.length === 0) callback();
+							var running = 0;
+							var limit = 10;
+							function keywordCheckLauncher() {
+								while (running < limit && webpage.Keywords.length > 0) {
+									var next = webpage.Keywords.shift();
+									var url = new URL(next.Id, next.URL);
+									checkKeyword(next, result.insertId, function() {
+										running--;
+										if (webpage.Keywords.length > 0) {
+											keywordCheckLauncher();
+										} else if (running == 0) {
+											console.log("Done checking keywords.");
+											callback();
+										}
+									});
+									running++;
 								}
-							});
-							running++;
+							}
+							keywordCheckLauncher();
 						}
-					}
-					keywordCheckLauncher();
+					});
 				}
 			});
 			//console.log("Query: " + query.sql);

@@ -3,10 +3,10 @@ var mysql = require("mysql");
 // Constructor
 function DAO() {
 	this.pool = mysql.createPool({
-		host: "host",
-		database: "database",
-		user: "username",
-		password: "password"
+		host: "mysql.cs.und.edu",
+		database: "kgoehner",
+		user: "kgoehner",
+		password: "mysql987"
 	});
 }
 
