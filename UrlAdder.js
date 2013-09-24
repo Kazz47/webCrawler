@@ -15,16 +15,22 @@ function UrlAdder() {
 	this.pool = this.addDAO.pool;
 }
 
+function URL(url, seed) {
+	this.id;
+	this.url = url;
+	this.seed = seed;
+}
+
 UrlAdder.prototype.addUrls = function(urls) {
 	if (!urls) return;
 	var self = this;
 	
 	var running = 0;
-	var limit = 5;
+	var limit = 2;
 	function urlAddLauncher() {
 		while (running < limit && urls.length > 0) {
 			var url = urls.shift();
-			self.addUrl(url, function() {
+			self.addUrl(url.url, url.seed, function() {
 				running--;
 				if (urls.length > 0) {
 					urlAddLauncher();
@@ -40,7 +46,7 @@ UrlAdder.prototype.addUrls = function(urls) {
 }
 
 // Add new url.
-UrlAdder.prototype.addUrl = function(url, callback) {
+UrlAdder.prototype.addUrl = function(url, seed, callback) {
 	this.pool.getConnection(function(err, connection) {
 		if (err) console.log("Add URL (Connection): " + err);
 		else {
@@ -50,12 +56,23 @@ UrlAdder.prototype.addUrl = function(url, callback) {
 			var regex = /.+\.([^?]+)(\?|$)/;
 			var result = url.match(regex);
 			if (commonMediaFiles.indexOf(result[1]) < 0) {
-				var urlHash = crypto.createHash("md5").update(url).digest("hex");
-				var urlObj = {Hash: urlHash, URL: url, DomainName: jsURL.parse(url).hostname};
-				var query = connection.query("INSERT INTO URL SET ?", urlObj, function(err, result) {
-					if(err && err.code != "ER_DUP_ENTRY") console.log("Add URL: " + err.code);
-					connection.release();
-					callback();
+				var seedHash = crypto.createHash("md5").update(seed).digest("hex");
+				var query = connection.query("SELECT u.Id FROM URL AS u WHERE u.Hash = ?",
+						[seedHash], function(err, result) {
+					if(err) {
+						console.log("Check URL: " + err.code);
+						connection.release();
+						callback();
+					} else {
+						var seedId = result[0].Id;
+						var urlHash = crypto.createHash("md5").update(url).digest("hex");
+						var urlObj = {Hash: urlHash, URL: url, SeedId: seedId, DomainName: jsURL.parse(url).hostname};
+						connection.query("INSERT INTO URL SET ?", urlObj, function(err, result) {
+							if(err && err.code != "ER_DUP_ENTRY") console.log("Add URL: " + err.code);
+							connection.release();
+							callback();
+						});	
+					}
 				});
 			} else {
 				connection.release();
@@ -65,13 +82,35 @@ UrlAdder.prototype.addUrl = function(url, callback) {
 	});
 }
 
-//var file = new flr.FileLineReader("sites.dat", 100);
+UrlAdder.prototype.addSeed = function(url) {
+	if (!url) return;
+	var self = this;
+	this.pool.getConnection(function(err, connection) {
+		if (err) console.log("Add Seed (Connection): " + err);
+		else {
+			hashIndex = url.indexOf("#");
+			if (hashIndex > 0) url = url.substring(0, hashIndex);
+			url = url.trim().replace(/\/+$/, "");
+			var regex = /.+\.([^?]+)(\?|$)/;
+			var result = url.match(regex);
+			if (commonMediaFiles.indexOf(result[1]) < 0) {
+				var urlHash = crypto.createHash("md5").update(url).digest("hex");
+				var urlObj = {Hash: urlHash, URL: url, IsSeed: 1, DomainName: jsURL.parse(url).hostname};
+				connection.query("INSERT INTO URL SET ?", urlObj, function(err, result) {
+					if(err && err.code != "ER_DUP_ENTRY") console.log("Add Seed: " + err.code);
+					connection.release();
+					self.addDAO.close();
+				});
+			} else {
+				connection.release();
+				self.addDAO.close();
+			}
+		}
+	});
+}
 
 var adder = new UrlAdder();
-var cmdUrls = [];
-for (var i=2; i<process.argv.length; i++) {
-	cmdUrls.push(process.argv[i]);
-}
-adder.addUrls(cmdUrls);
+if (process.argv[2]) adder.addSeed(process.argv[2]);
 
 module.exports = UrlAdder;
+module.exports.URL = URL;

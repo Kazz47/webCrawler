@@ -3,6 +3,7 @@ var jsURL = require("url");
 var ziprip = require("./modules/ziprip");
 var DAO = require("./dao");
 var UrlAdder = require("./UrlAdder");
+var config = require("../../resources/config.json");
 
 console.log("Starting...");
 var crawlerDAO = new DAO();
@@ -10,9 +11,10 @@ var pool = crawlerDAO.pool;
 
 crawlOutdatedPages();
 
-function URL(id, url) {
+function URL(id, url, seed) {
 	this.id = id;
 	this.url = url;
+	this.seed = seed;
 }
 
 function Webpage(urlId, title) {
@@ -28,43 +30,60 @@ function Webpage(urlId, title) {
 // Add a callback?
 
 function crawlOutdatedPages(depth) {
+	console.log(new Date());
 	pool.getConnection(function(err, connection) {
 		if (err) console.log(err);
 		else {
-			connection.query("SELECT u.Id, u.URL FROM URL AS u \
-					LEFT JOIN Webpage AS w ON u.Id = w.URLId \
-					WHERE w.URLId IS NULL", function(err, rows) {
-				if (err) {
-					console.log(err);
-					crawlerDAO.close();
-				} else {
-					if (rows.length === 0) {
-						setTimeout(crawlOutdatedPages, 2000);
-						//crawlerDAO.close();
-					} else {
-						var running = 0;
-						var limit = 5;
-						function urlParseLauncher() {
-							while (running < limit && rows.length > 0) {
-								var next = rows.shift();
-								var url = new URL(next.Id, next.URL);
-								parseUrl(url, function() {
-									running--;
-									if (rows.length > 0) {
-										urlParseLauncher();
-									} else if (running == 0) {
-										console.log("Done!");
-										crawlOutdatedPages();
-										//crawlerDAO.close();
+			connection.query("SELECT COUNT(*) AS c FROM Webpage", function(err , result) {
+				if (result[0].c < config.settings.maxCrawlSize) {
+					connection.query("SELECT u.Id, u.URL FROM URL AS u \
+							LEFT JOIN Webpage AS w ON u.Id = w.URLId \
+							WHERE w.URLId IS NULL", function(err, rows) {
+						if (err) {
+							console.log(err);
+							crawlerDAO.close();
+						} else {
+							if (rows.length === 0) {
+								//delete require.cache[require.resolve("../../resources/config.json")]
+								//config = require("../../resources/config.json");
+								//setTimeout(crawlOutdatedPages, 2000);
+								console.log("Exit");
+								crawlerDAO.close();
+							} else {
+								var running = 0;
+								var limit = 2;
+								function urlParseLauncher() {
+									while (running < limit && rows.length > 0) {
+										var next = rows.shift();
+										var url = new URL(next.Id, next.URL);
+										parseUrl(url, function(err) {
+											running--;
+											if (err) {
+												rows = [];
+											}
+											if (rows.length > 0) {
+												urlParseLauncher();
+											} else if (running == 0) {
+												console.log("Done!");
+												setTimeout(crawlOutdatedPages, 2000);
+												//crawlerDAO.close();
+											}
+										});
+										running++;
 									}
-								});
-								running++;
+								}
+								urlParseLauncher();
 							}
 						}
-						urlParseLauncher();
-					}
+						connection.release();
+					});
+				} else {
+					//delete require.cache[require.resolve("../../resources/config.json")]
+					//config = require("../../resources/config.json");
+					//setTimeout(crawlOutdatedPages, 2000);
+					console.log("Exit");
+					crawlerDAO.close();
 				}
-				connection.release();
 			});
 		}
 	});
@@ -77,8 +96,8 @@ function parseUrl(URL, callback) {
 			url: URL.url,
 			scripts: ["http://code.jquery.com/jquery.js"],
 			done: function (errors, window) {
-				getSiteHeaderInfo(window.document, URL, function() {
-					callback();
+				getSiteHeaderInfo(window.document, URL, function(err) {
+					callback(err);
 				});
 				//printSite(window.document, window.url);
 			}
@@ -112,8 +131,7 @@ function getSiteHeaderInfo(dom, url, callback) {
 		if (jsURL.parse(linkTags[i].href).hostname == hostname)
 			links.push(linkTags[i].href);
 	}
-	var urlAdder = new UrlAdder();
-	urlAdder.addUrls(links);
+	checkURLs(links);
 		
 	var webpage = new Webpage(url.id, dom.title.trim());
 	if (webpage.Title == "")
@@ -123,8 +141,39 @@ function getSiteHeaderInfo(dom, url, callback) {
 	if (keywordsTag)
 		webpage.Keywords = keywordsTag.content.toLowerCase().split(",");
 		
-	checkWebpage(webpage, function() {
-		callback();
+	checkWebpage(webpage, function(err) {
+		callback(err);
+	});
+}
+
+// Make sure URL has a seed.
+function checkURLs(urls, callback) {
+	pool.getConnection(function(err, connection) {
+		if (err) {
+			console.log("CheckURL (Connection): " + err);
+			callback(err);
+		} else {
+			var query = connection.query("SELECT u.URL FROM URL AS u WHERE u.IsSeed IS TRUE", function(err, seeds) {
+				connection.release();
+				if(err) {
+					console.log("CheckURL: " + err);
+					callback(err);
+				} else {
+					var confirmedURLs = [];
+					for (var i=0; i<urls.length; i++) {
+						for (var j=0; j<seeds.length; j++) {
+							if (urls[i].indexOf(seeds[j].URL) >= 0) {
+								confirmedURLs.push(new UrlAdder.URL(urls[i], seeds[j].URL));
+								break;
+							}
+						}
+					}
+					var urlAdder = new UrlAdder();
+					urlAdder.addUrls(confirmedURLs);
+				}
+			});
+		//console.log("Query: " + query.sql);
+		}
 	});
 }
 
@@ -132,7 +181,7 @@ function checkWebpage(webpage, callback) {
 	pool.getConnection(function(err, connection) {
 		if (err) {
 			console.log("CheckWebpage (Connection): " + err);
-			callback();
+			callback(err);
 		} else {
 			var query = connection.query("SELECT w.Id FROM Webpage AS w \
 					WHERE w.URLId = ?", [webpage.URLId], function(err, rows) {
@@ -142,12 +191,12 @@ function checkWebpage(webpage, callback) {
 					callback();
 				} else {
 					if (rows[0] == null) {
-						addNewWebpage(webpage, function() {
-							callback();
+						addNewWebpage(webpage, function(err) {
+							callback(err);
 						});
 					} else {
-						updateWebpage(webpage, function() {
-							callback();
+						updateWebpage(webpage, function(err) {
+							callback(err);
 						});
 					}
 				}
@@ -161,36 +210,36 @@ function addNewWebpage(webpage, callback) {
 	pool.getConnection(function(err, connection) {
 		if (err) {
 			console.log("Add Webpage (Connection): " + err);
-			callback();
+			callback(err);
 		} else {
 			connection.query("SELECT COUNT(*) AS c FROM Webpage", function(err , result) {
 				connection.release();
-				if (result[0].c > 494) {
+				if (result[0].c > config.settings.maxCrawlSize) {
 					console.log("Too many pages!");
-					callback();
+					callback(new Error("Too many pages!"));
 				} else {
 					var webpageSQL = {URLId: webpage.URLId, Title: webpage.Title, Description: webpage.Description};
 					var query = connection.query("INSERT INTO Webpage SET ?", webpageSQL, function(err, result) {
 						connection.release();
 						if(err) {
 							console.log("Add Webpage: " + err);
-							callback();
+							callback(err);
 						} else {
 							//console.log("Result: " + result.insertId);
 							if (webpage.Keywords.length === 0) callback();
 							var running = 0;
-							var limit = 10;
+							var limit = 2;
 							function keywordCheckLauncher() {
 								while (running < limit && webpage.Keywords.length > 0) {
 									var next = webpage.Keywords.shift();
 									var url = new URL(next.Id, next.URL);
-									checkKeyword(next, result.insertId, function() {
+									checkKeyword(next, result.insertId, function(err) {
 										running--;
 										if (webpage.Keywords.length > 0) {
 											keywordCheckLauncher();
 										} else if (running == 0) {
 											console.log("Done checking keywords.");
-											callback();
+											callback(err);
 										}
 									});
 									running++;
@@ -210,29 +259,29 @@ function updateWebpage(webpage, callback) {
 	pool.getConnection(function(err, connection) {
 		if (err) {
 			console.log("Update Webpage (Connection): " + err);
-			callback();
+			callback(err);
 		} else {
 			var query = connection.query("UPDATE Webpage SET ?", webpage, function(err, result) {
 				connection.release();
 				if(err) {
 					console.log("Update Webpage: " + err);
-					callback();
+					callback(err);
 				} else {
 					//console.log("Result: " + result.insertId);
 					if (webpage.Keywords.length === 0) callback();
 					var running = 0;
-					var limit = 10;
+					var limit = 2;
 					function keywordCheckLauncher() {
 						while (running < limit && webpage.Keywords.length > 0) {
 							var next = webpage.Keywords.shift();
 							var url = new URL(next.Id, next.URL);
-							checkKeyword(next, result.insertId, function() {
+							checkKeyword(next, result.insertId, function(err) {
 								running--;
 								if (webpage.Keywords.length > 0) {
 									keywordCheckLauncher();
 								} else if (running == 0) {
 									console.log("Done checking keywords.");
-									callback();
+									callback(err);
 								}
 							});
 							running++;
@@ -250,22 +299,22 @@ function checkKeyword(keyword, webpageId, callback) {
 	pool.getConnection(function(err, connection) {
 		if (err) {
 			console.log("Select keyword (Connection): " + err);
-			callback();
+			callback(err);
 		} else {
 			var keywordSQL = {Phrase: keyword.toLowerCase().trim()};
 			var query = connection.query("SELECT k.Id FROM Keyword AS k WHERE ?", keywordSQL, function(err, rows) {
 				connection.release();
 				if (err) {
 					console.log("Select keyword: " + err);
-					callback();
+					callback(err);
 				} else {
 					if (rows[0] == null || rows[0].Id == 0) {
-						addKeyword(keyword, webpageId, function() {
-							callback();
+						addKeyword(keyword, webpageId, function(err) {
+							callback(err);
 						});
 					} else {
-						addKeywordToWebpage(rows[0].Id, webpageId, function() {
-							callback();
+						addKeywordToWebpage(rows[0].Id, webpageId, function(err) {
+							callback(err);
 						});
 					}
 				}
@@ -279,17 +328,17 @@ function addKeyword(keyword, webpageId, callback) {
 	pool.getConnection(function(err, connection) {
 		if (err) {
 			console.log("Add keyword (Connection): " + err);
-			callback();
+			callback(err);
 		} else {
 			var keywordSQL = {Phrase: keyword.toLowerCase().trim()};
 			var query = connection.query("INSERT INTO Keyword SET ?", keywordSQL, function(err, result) {
 				connection.release();
 				if(err) {
 					console.log("Add keyword: " + err);
-					callback();
+					callback(err);
 				} else {
-					addKeywordToWebpage(result.insertId, webpageId, function() {
-						callback();
+					addKeywordToWebpage(result.insertId, webpageId, function(err) {
+						callback(err);
 					});
 				}
 			});
@@ -302,13 +351,13 @@ function addKeywordToWebpage(keywordId, webpageId, callback) {
 	pool.getConnection(function(err, connection) {
 		if (err) {
 			console.log("Add keyword to webpage (Connection): " + err);
-			callback();
+			callback(err);
 		} else {
 			var webpageKeywordSQL = {WebpageId: webpageId, KeywordId: keywordId};
 			var query = connection.query("INSERT INTO WebpageKeywordJoin SET ?", webpageKeywordSQL, function(err, result) {
 				connection.release();
 				if (err) console.log("Add keyword to webpage: " + err);
-				callback();
+				callback(err);
 			});
 			//console.log("Query: " + query.sql);
 		}

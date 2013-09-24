@@ -1,12 +1,13 @@
 var mysql = require("mysql");
+var config = require("../../resources/config.json");
 
 // Constructor
 function DAO() {
 	this.pool = mysql.createPool({
-		host: "mysql.cs.und.edu",
-		database: "kgoehner",
-		user: "kgoehner",
-		password: "mysql987"
+		host: config.db.und.host,
+		database: config.db.und.database,
+		user: config.db.und.username,
+		password: config.db.und.password
 	});
 }
 
