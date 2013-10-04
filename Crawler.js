@@ -1,8 +1,9 @@
 var jsdom = require("jsdom");
 var jsURL = require("url");
-var ziprip = require("./modules/ziprip");
+//var ziprip = require("./modules/ziprip");
 var DAO = require("./dao");
 var UrlAdder = require("./UrlAdder");
+var WordAdder = require("./WordAdder");
 var config = require("../../resources/config.json");
 
 console.log("Starting...");
@@ -139,7 +140,7 @@ function getSiteHeaderInfo(dom, url, callback) {
 	if (descriptionTag)
 		webpage.Description = descriptionTag.content.trim();
 	if (keywordsTag)
-		webpage.Keywords = keywordsTag.content.toLowerCase().split(",");
+		webpage.Keywords = keywordsTag.content;
 		
 	checkWebpage(webpage, function(err) {
 		callback(err);
@@ -225,27 +226,15 @@ function addNewWebpage(webpage, callback) {
 							console.log("Add Webpage: " + err);
 							callback(err);
 						} else {
-							//console.log("Result: " + result.insertId);
+							webpage.Id = result.insertId;
 							if (webpage.Keywords.length === 0) callback();
-							var running = 0;
-							var limit = 2;
-							function keywordCheckLauncher() {
-								while (running < limit && webpage.Keywords.length > 0) {
-									var next = webpage.Keywords.shift();
-									var url = new URL(next.Id, next.URL);
-									checkKeyword(next, result.insertId, function(err) {
-										running--;
-										if (webpage.Keywords.length > 0) {
-											keywordCheckLauncher();
-										} else if (running == 0) {
-											console.log("Done checking keywords.");
-											callback(err);
-										}
-									});
-									running++;
-								}
+							else {
+								var keywordAdder = new WordAdder();
+								keywordAdder.addWords(webpage.Keywords, webpage.Id);
+								var descriptionAdder = new WordAdder();
+								descriptionAdder.addWords(webpage.Description, webpage.Id);
+								callback();
 							}
-							keywordCheckLauncher();
 						}
 					});
 				}
@@ -261,105 +250,23 @@ function updateWebpage(webpage, callback) {
 			console.log("Update Webpage (Connection): " + err);
 			callback(err);
 		} else {
-			var query = connection.query("UPDATE Webpage SET ?", webpage, function(err, result) {
+			connection.query("UPDATE Webpage SET ?", webpage, function(err, result) {
 				connection.release();
 				if(err) {
 					console.log("Update Webpage: " + err);
 					callback(err);
 				} else {
-					//console.log("Result: " + result.insertId);
+					webpage.Id = result.insertId;
 					if (webpage.Keywords.length === 0) callback();
-					var running = 0;
-					var limit = 2;
-					function keywordCheckLauncher() {
-						while (running < limit && webpage.Keywords.length > 0) {
-							var next = webpage.Keywords.shift();
-							var url = new URL(next.Id, next.URL);
-							checkKeyword(next, result.insertId, function(err) {
-								running--;
-								if (webpage.Keywords.length > 0) {
-									keywordCheckLauncher();
-								} else if (running == 0) {
-									console.log("Done checking keywords.");
-									callback(err);
-								}
-							});
-							running++;
-						}
-					}
-					keywordCheckLauncher();
-				}
-			});
-			//console.log("Query: " + query.sql);
-		}
-	});
-}
-
-function checkKeyword(keyword, webpageId, callback) {
-	pool.getConnection(function(err, connection) {
-		if (err) {
-			console.log("Select keyword (Connection): " + err);
-			callback(err);
-		} else {
-			var keywordSQL = {Phrase: keyword.toLowerCase().trim()};
-			var query = connection.query("SELECT k.Id FROM Keyword AS k WHERE ?", keywordSQL, function(err, rows) {
-				connection.release();
-				if (err) {
-					console.log("Select keyword: " + err);
-					callback(err);
-				} else {
-					if (rows[0] == null || rows[0].Id == 0) {
-						addKeyword(keyword, webpageId, function(err) {
-							callback(err);
-						});
-					} else {
-						addKeywordToWebpage(rows[0].Id, webpageId, function(err) {
-							callback(err);
-						});
+					else {
+						var keywordAdder = new WordAdder();
+						keywordAdder.addWords(webpage.Keywords, webpage.Id);
+						var descriptionAdder = new WordAdder();
+						descriptionAdder.addWords(webpage.Description, webpage.Id);
+						callback();
 					}
 				}
 			});
-			//console.log("Query: " + query.sql);
-		}
-	});
-}
-
-function addKeyword(keyword, webpageId, callback) {
-	pool.getConnection(function(err, connection) {
-		if (err) {
-			console.log("Add keyword (Connection): " + err);
-			callback(err);
-		} else {
-			var keywordSQL = {Phrase: keyword.toLowerCase().trim()};
-			var query = connection.query("INSERT INTO Keyword SET ?", keywordSQL, function(err, result) {
-				connection.release();
-				if(err) {
-					console.log("Add keyword: " + err);
-					callback(err);
-				} else {
-					addKeywordToWebpage(result.insertId, webpageId, function(err) {
-						callback(err);
-					});
-				}
-			});
-			//console.log("Query: " + query.sql);
-		}
-	});
-}
-
-function addKeywordToWebpage(keywordId, webpageId, callback) {
-	pool.getConnection(function(err, connection) {
-		if (err) {
-			console.log("Add keyword to webpage (Connection): " + err);
-			callback(err);
-		} else {
-			var webpageKeywordSQL = {WebpageId: webpageId, KeywordId: keywordId};
-			var query = connection.query("INSERT INTO WebpageKeywordJoin SET ?", webpageKeywordSQL, function(err, result) {
-				connection.release();
-				if (err) console.log("Add keyword to webpage: " + err);
-				callback(err);
-			});
-			//console.log("Query: " + query.sql);
 		}
 	});
 }
