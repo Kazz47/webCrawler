@@ -1,11 +1,10 @@
 var restify = require('restify');
-var DAO = require("./dao);
+var DAO = require("./dao");
 
-function respond(req, res, next) {
-    res.send("hello " + req.params.name);
-}
-
-function getWebpageCount() {
+function getWebpageCount(req, res, next) {
+    res.writeHead(200, {
+        'Content-Type': 'text/plain'
+    });
     var newDAO = new DAO();
     var pool = newDAO.pool;
     pool.getConnection(function(err, connection) {
@@ -13,13 +12,14 @@ function getWebpageCount() {
             console.log("Page count (connection): " + err);
             //callback();
         } else {
-            connection.query("SELECT COUNT(*) FROM Webpage", function(err, result) {
+            connection.query("SELECT COUNT(*) as c FROM Webpage", function(err, result) {
+                connection.release();
                 if (err) {
                     console.log("Page count: " + erro.code);
-                    connection.release();
                     //callback();
                 } else {
-                    res.send(result[0]);
+                    res.write(result[0].c.toString());
+                    res.end();
                     //callback();
                 }
             });
@@ -29,8 +29,8 @@ function getWebpageCount() {
 
 
 var server = restify.createServer();
-server.get("/hello/:name", respond);
-server.head("/hello/:name", respond);
+server.get("/pagecount", getWebpageCount);
+server.head("/pagecount", getWebpageCount);
 
 server.listen(8080, function() {
         console.log('%s listening at %s', server.name, server.url);

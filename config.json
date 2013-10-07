@@ -1,0 +1,29 @@
+{
+    "db": {
+        "und": {
+            "host": "mysql.cs.und.edu",
+            "database": "kgoehner",
+            "username": "kgoehner",
+            "password": "mysql987"
+        },
+        "db1": {
+            "host": "mysql.cs.und.edu",
+            "database": "kgoehner",
+            "username": "kgoehner",
+            "password": "mysql987"
+        }
+    },
+    "urls": {
+        "baseUrl": "http://example.com"
+    },
+    "paths": {
+        "resources": "/resources",
+        "images": {
+            "content": "/images/content",
+            "layout": "/images/layout"
+        }
+    },
+    "settings": {
+        "maxCrawlSize": "400"
+    }
+}

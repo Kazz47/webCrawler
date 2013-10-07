@@ -1,5 +1,5 @@
 var mysql = require("mysql");
-var config = require("../../resources/config.json");
+var config = require("./config.json");
 
 // Constructor
 function DAO() {
