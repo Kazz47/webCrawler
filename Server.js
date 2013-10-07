@@ -35,8 +35,8 @@ function getMaxCrawlSize(req, res, next) {
 
 
 var server = restify.createServer();
-server.head("/pageCount", getWebpageCount);
-server.head("/crawlSize", getMaxCrawlSize);
+server.get("/pageCount", getWebpageCount);
+server.get("/crawlSize", getMaxCrawlSize);
 
 server.listen(8080, function() {
         console.log('%s listening at %s', server.name, server.url);
