@@ -15,7 +15,7 @@ function getWebpageCount(req, res, next) {
             connection.query("SELECT COUNT(*) as c FROM Webpage", function(err, result) {
                 connection.release();
                 if (err) {
-                    console.log("Page count: " + erro.code);
+                    console.log("Page count: " + err.code);
                 } else {
                     res.write(result[0].c.toString());
                     res.end();
@@ -34,6 +34,7 @@ function getMaxCrawlSize(req, res, next) {
 }
 
 function getModal(req, res, next) {
+    var modal;
     var webpageId;
     res.writeHead(200, {
         'Content-Type': 'text/plain'
@@ -42,10 +43,27 @@ function getModal(req, res, next) {
         if (err) {
             console.log("Modal (connection): " + err);
         } else {
-            connection.query("SELECT w.Id, w.Title, u.URL, u.Hash, s.URL, w.Description, w.Parsed FROM Webpage AS w JOIN URL AS u ON u.Id = w.URLId LEFT JOIN URL AS s ON u.SeedId = s.Id WHERE w.Id = ?", webpageId, function(err, rows) {
-                res.write(result[0]);
+            connection.query("SELECT w.Id, w.Title, u.URL, u.Hash, s.URL as SeedURL, w.Description, w.Parsed AS Date FROM Webpage AS w JOIN URL AS u ON u.Id = w.URLId LEFT JOIN URL AS s ON u.SeedId = s.Id WHERE w.Id = ?", webpageId, function(err, rows) {
+                if (err) {
+                    console.log("Modal: " + err.code);
+                } else {
+                    modal = result[0];
+                }
             });
-    res.end();
+            connection.query("SELECT k.Word FROM Keyword AS k JOIN WebpageKeywordJoin AS w ON k.Id = w.Keyword WHERE w.WebpageId = ?", webpageId, function(err, rows) {
+                if (err) {
+                    console.log("Keywords: " + err.code);
+                } else {
+                    var keywords = new Array();
+                    for(int i=0; i<rows.length; i++) {
+                        keywords.push(rows[i].Word);
+                    }
+                    modal.Keywords = keywords;
+                    res.send(modal);
+                }
+            });
+        }
+    });
 }
 
 
