@@ -4,7 +4,7 @@ var jsURL = require("url");
 var DAO = require("./dao");
 var UrlAdder = require("./UrlAdder");
 var WordAdder = require("./WordAdder");
-var config = require("../../resources/config.json");
+var config = require("./config.json");
 
 console.log("Starting...");
 var crawlerDAO = new DAO();

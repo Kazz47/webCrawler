@@ -7,6 +7,7 @@ var pool = serviceDAO.pool;
 
 function getWebpageCount(req, res, next) {
     res.writeHead(200, {
+        'Access-Control-Allow-Origin': 'http://people.cs.und.edu',
         'Content-Type': 'text/plain'
     });
     pool.getConnection(function(err, connection) {
@@ -28,6 +29,7 @@ function getWebpageCount(req, res, next) {
 
 function getMaxCrawlSize(req, res, next) {
     res.writeHead(200, {
+        'Access-Control-Allow-Origin': 'http://people.cs.und.edu',
         'Content-Type': 'text/plain'
     });
     res.write(config.settings.maxCrawlSize.toString());
@@ -37,6 +39,7 @@ function getMaxCrawlSize(req, res, next) {
 function getModal(req, res, next) {
     var modal;
     var webpageId = req.query.id;
+    res.header('Access-Control-Allow-Origin', 'htt://people.cs.und.edu');
     pool.getConnection(function(err, connection) {
         if (err) {
             console.log("Modal (connection): " + err);
@@ -77,7 +80,7 @@ function getWebpages(req, res, next) {
         queryString = queryString.trim();
         queryString = queryString.replace(" ", "|");
     }
-    console.log(queryString);
+    res.header('Access-Control-Allow-Origin', 'htt://people.cs.und.edu');
 
     pool.getConnection(function(err, connection) {
         if (err) {
@@ -130,7 +133,7 @@ function addSeed(req, res, next) {
 
 function clearDB(req, res, next) {
     res.writeHead(200, {
-        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Origin': 'http://people.cs.und.edu',
         'Content-Type': 'text/plain'
     });
     pool.getConnection(function(err, connection) {
