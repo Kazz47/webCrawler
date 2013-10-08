@@ -71,7 +71,7 @@ UrlAdder.prototype.addUrl = function(url, seed, callback) {
 							if(err && err.code != "ER_DUP_ENTRY") console.log("Add URL: " + err.code);
 							connection.release();
 							callback();
-						});	
+						});
 					}
 				});
 			} else {
@@ -82,12 +82,14 @@ UrlAdder.prototype.addUrl = function(url, seed, callback) {
 	});
 }
 
-UrlAdder.prototype.addSeed = function(url) {
+UrlAdder.prototype.addSeed = function(url, callback) {
 	if (!url) return;
 	var self = this;
 	this.pool.getConnection(function(err, connection) {
-		if (err) console.log("Add Seed (Connection): " + err);
-		else {
+		if (err) {
+            console.log("Add Seed (Connection): " + err);
+            callback(false);
+        } else {
 			hashIndex = url.indexOf("#");
 			if (hashIndex > 0) url = url.substring(0, hashIndex);
 			url = url.trim().replace(/\/+$/, "");
@@ -97,13 +99,19 @@ UrlAdder.prototype.addSeed = function(url) {
 				var urlHash = crypto.createHash("md5").update(url).digest("hex");
 				var urlObj = {Hash: urlHash, URL: url, IsSeed: 1, DomainName: jsURL.parse(url).hostname};
 				connection.query("INSERT INTO URL SET ?", urlObj, function(err, result) {
-					if(err && err.code != "ER_DUP_ENTRY") console.log("Add Seed: " + err.code);
-					connection.release();
-					self.addDAO.close();
+					if(err) {
+                        console.log("Add Seed: " + err.code);
+                        callback(false);
+                    } else {
+                        connection.release();
+                        self.addDAO.close();
+                        callback(true);
+                    }
 				});
 			} else {
 				connection.release();
 				self.addDAO.close();
+                callback(false);
 			}
 		}
 	});
