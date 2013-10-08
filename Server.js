@@ -130,6 +130,7 @@ function addSeed(req, res, next) {
 
 function clearDB(req, res, next) {
     res.writeHead(200, {
+        'Access-Control-Allow-Origin': '*',
         'Content-Type': 'text/plain'
     });
     pool.getConnection(function(err, connection) {
