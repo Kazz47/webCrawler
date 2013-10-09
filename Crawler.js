@@ -45,6 +45,7 @@ function crawlOutdatedPages(depth) {
 							console.log(err);
 							crawlerDAO.close();
 						} else {
+                            console.log("Rows: " + rows.length);
 							if (rows.length === 0) {
 								//delete require.cache[require.resolve("../../resources/config.json")]
 								//config = require("../../resources/config.json");
