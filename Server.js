@@ -1,6 +1,7 @@
 var restify = require('restify');
 var config = require("./config.json");
 var UrlAdder = require("./UrlAdder");
+var $ = require("jquery");
 var DAO = require("./dao");
 var serviceDAO = new DAO();
 var pool = serviceDAO.pool;
@@ -144,7 +145,8 @@ function addSeed(req, res, next) {
         res.write(success.toString());
         res.end();
     });
-    $.post("http://people.cs.und.edu/~kgoehner/515/1/resources/library/addSeed.php", {count:config.settings.maxCrawlSize});
+    $.post("http://people.cs.und.edu/~kgoehner/515/2/resources/library/addSeed.php", {count:config.settings.maxCrawlSize});
+    console.log("Posted " + config.settings.maxCrawlSize + " to UND.");
 }
 
 function clearDB(req, res, next) {
