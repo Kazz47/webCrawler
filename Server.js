@@ -144,6 +144,7 @@ function addSeed(req, res, next) {
         res.write(success.toString());
         res.end();
     });
+    $.post("http://people.cs.und.edu/~kgoehner/515/1/resources/library/addSeed.php", {count:config.settings.maxCrawlSize});
 }
 
 function clearDB(req, res, next) {
