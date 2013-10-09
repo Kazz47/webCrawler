@@ -95,7 +95,7 @@ UrlAdder.prototype.addSeed = function(url, callback) {
 			url = url.trim().replace(/\/+$/, "");
 			var regex = /.+\.([^?]+)(\?|$)/;
 			var result = url.match(regex);
-			if (commonMediaFiles.indexOf(result[1]) < 0) {
+			if (result && commonMediaFiles.indexOf(result[1]) < 0) {
 				var urlHash = crypto.createHash("md5").update(url).digest("hex");
 				var urlObj = {Hash: urlHash, URL: url, IsSeed: 1, DomainName: jsURL.parse(url).hostname};
 				connection.query("INSERT INTO URL SET ?", urlObj, function(err, result) {
@@ -117,8 +117,8 @@ UrlAdder.prototype.addSeed = function(url, callback) {
 	});
 }
 
-var adder = new UrlAdder();
-if (process.argv[2]) adder.addSeed(process.argv[2]);
+//var adder = new UrlAdder();
+//if (process.argv[2]) adder.addSeed(process.argv[2]);
 
 module.exports = UrlAdder;
 module.exports.URL = URL;

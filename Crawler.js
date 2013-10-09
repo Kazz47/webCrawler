@@ -10,6 +10,7 @@ console.log("Starting...");
 var crawlerDAO = new DAO();
 var pool = crawlerDAO.pool;
 
+config.settings.maxCrawlSize = process.argv[2];
 crawlOutdatedPages();
 
 function URL(id, url, seed) {
@@ -23,7 +24,7 @@ function Webpage(urlId, title) {
 	this.Keywords = [];
 	this.Description = null;
 	this.Parsed = null;
-	
+
 	this.URLId = urlId;
 	this.Title = title;
 }
@@ -117,7 +118,7 @@ function getSiteHeaderInfo(dom, url, callback) {
 	var links = [];
 	var metaTags = dom.getElementsByTagName("meta");
 	var linkTags = dom.links;
-	
+
 	for (var i=0; i<metaTags.length; i++) {
 		if (metaTags[i].name) {
 			if (metaTags[i].name.toLowerCase() == "keywords")
@@ -126,14 +127,14 @@ function getSiteHeaderInfo(dom, url, callback) {
 				descriptionTag = metaTags[i];
 		}
 	}
-	
+
 	var links = [];
 	for (var i=0; i<linkTags.length; i++) {
 		if (jsURL.parse(linkTags[i].href).hostname == hostname)
 			links.push(linkTags[i].href);
 	}
 	checkURLs(links);
-		
+
 	var webpage = new Webpage(url.id, dom.title.trim());
 	if (webpage.Title == "")
 		webpage.Title = hostname;
@@ -141,7 +142,7 @@ function getSiteHeaderInfo(dom, url, callback) {
 		webpage.Description = descriptionTag.content.trim();
 	if (keywordsTag)
 		webpage.Keywords = keywordsTag.content;
-		
+
 	checkWebpage(webpage, function(err) {
 		callback(err);
 	});
