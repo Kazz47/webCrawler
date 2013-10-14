@@ -10,7 +10,9 @@ console.log("Starting...");
 var crawlerDAO = new DAO();
 var pool = crawlerDAO.pool;
 
-config.settings.maxCrawlSize = process.argv[2];
+if (process.argv[2]) {
+    config.settings.maxCrawlSize = process.argv[2];
+}
 crawlOutdatedPages();
 
 function URL(id, url, seed) {
@@ -38,9 +40,7 @@ function crawlOutdatedPages(depth) {
 		else {
 			connection.query("SELECT COUNT(*) AS c FROM Webpage", function(err , result) {
 				if (result[0].c < config.settings.maxCrawlSize) {
-					connection.query("SELECT u.Id, u.URL FROM URL AS u \
-							LEFT JOIN Webpage AS w ON u.Id = w.URLId \
-							WHERE w.URLId IS NULL", function(err, rows) {
+					connection.query("SELECT u.Id, u.URL FROM URL AS u LEFT JOIN Webpage AS w ON u.Id = w.URLId WHERE w.URLId IS NULL", function(err, rows) {
 						if (err) {
 							console.log(err);
 							crawlerDAO.close();
@@ -50,7 +50,7 @@ function crawlOutdatedPages(depth) {
 								//delete require.cache[require.resolve("../../resources/config.json")]
 								//config = require("../../resources/config.json");
 								//setTimeout(crawlOutdatedPages, 2000);
-								console.log("Exit");
+								console.log("Exit (No webpages left)");
 								crawlerDAO.close();
 							} else {
 								var running = 0;
@@ -84,7 +84,7 @@ function crawlOutdatedPages(depth) {
 					//delete require.cache[require.resolve("../../resources/config.json")]
 					//config = require("../../resources/config.json");
 					//setTimeout(crawlOutdatedPages, 2000);
-					console.log("Exit");
+					console.log("Exit (Too many pages)");
 					crawlerDAO.close();
 				}
 			});
@@ -99,7 +99,7 @@ function parseUrl(URL, callback) {
 			url: URL.url,
 			scripts: ["http://code.jquery.com/jquery.js"],
 			done: function (errors, window) {
-				getSiteHeaderInfo(window.document, URL, function(err) {
+				getSiteHeaderInfo(window, URL, function(err) {
 					callback(err);
 				});
 				//printSite(window.document, window.url);
@@ -112,7 +112,8 @@ function parseUrl(URL, callback) {
 	}
 }
 
-function getSiteHeaderInfo(dom, url, callback) {
+function getSiteHeaderInfo(window, url, callback) {
+    var dom = window.document;
 	var hostname = jsURL.parse(url.url).hostname;
 	var keywordsTag;
 	var descriptionTag;
@@ -142,7 +143,8 @@ function getSiteHeaderInfo(dom, url, callback) {
 	if (descriptionTag)
 		webpage.Description = descriptionTag.content.trim();
 	if (keywordsTag)
-		webpage.Keywords = dom.getElementsByTagName("body").textContent.trim().replace(/\s+/g,' ');
+        webpage.Keywords = webpage.Keywords.concat(keywordsTag.content.trim().split(' '));
+    webpage.Keywords = webpage.Keywords.concat(window.$("body").text().trim().replace(/\s+/g,' ').split(' '));
 
 	checkWebpage(webpage, function(err) {
 		callback(err);
@@ -232,7 +234,7 @@ function addNewWebpage(webpage, callback) {
 							if (webpage.Keywords.length === 0) callback();
 							else {
 								var keywordAdder = new WordAdder();
-								keywordAdder.addWords(webpage.Keywords, webpage.Id);
+								keywordAdder.addWords(webpage.Keywords.join(' '), webpage.Id);
 								var descriptionAdder = new WordAdder();
 								descriptionAdder.addWords(webpage.Description, webpage.Id);
 								callback();
@@ -262,7 +264,7 @@ function updateWebpage(webpage, callback) {
 					if (webpage.Keywords.length === 0) callback();
 					else {
 						var keywordAdder = new WordAdder();
-						keywordAdder.addWords(webpage.Keywords, webpage.Id);
+						keywordAdder.addWords(webpage.Keywords.join(' '), webpage.Id);
 						var descriptionAdder = new WordAdder();
 						descriptionAdder.addWords(webpage.Description, webpage.Id);
 						callback();

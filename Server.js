@@ -105,7 +105,7 @@ function getWebpages(req, res, next) {
             var lastPage;
             var start = 0;
             var end = parseInt(displayMax);
-            connection.query("SELECT COUNT(*) AS c FROM Webpage AS w JOIN URL AS u ON u.Id = w.URLId WHERE w.Title REGEXP ? OR u.URL REGEXP ? OR w.Id IN (SELECT wkj.WebpageId FROM WebpageKeywordJoin AS wkj JOIN Keyword AS k ON k.Id = wkj.KeywordId WHERE k.Word REGEXP ?)", [queryString, queryString, queryString], function(err, result) {
+            connection.query("SELECT COUNT(*) AS c FROM Webpage AS w RIGHT JOIN URL AS u ON u.Id = w.URLId RIGHT JOIN WebpageKeywordJoin as wkj ON w.Id = wkj.WebpageID RIGHT JOIN Keyword AS k ON wkj.KeywordId = k.Id WHERE k.Word REGEXP ? ORDER BY wkj.Num DESC LIMIT ?, ?", [queryString, start, end] function(err, rows) {
                 if (err) {
                     console.log("Webpages: " + err);
                 } else {
@@ -116,7 +116,7 @@ function getWebpages(req, res, next) {
                     start = (page-1)*displayMax;
                     end = displayMax;
 
-		    connection.query("SELECT w.Id, w.Title, u.URL FROM Webpage AS w JOIN URL AS u ON u.Id = w.URLId WHERE w.Title REGEXP ? OR u.URL REGEXP ? OR w.Id IN (SELECT wkj.WebpageId FROM WebpageKeywordJoin AS wkj JOIN Keyword as k ON k.ID = wkj.KeywordId WHERE k.Word REGEXP ?) LIMIT ?, ?", [queryString, queryString, queryString, start, end], function(err, rows) {
+            connection.query("SELECT w.Id, w.Title, u.URL, wkj.Num FROM Webpage AS w RIGHT JOIN URL AS u ON u.Id = w.URLId RIGHT JOIN WebpageKeywordJoin as wkj ON w.Id = wkj.WebpageID RIGHT JOIN Keyword AS k ON wkj.KeywordId = k.Id WHERE k.Word REGEXP ? ORDER BY wkj.Num DESC LIMIT ?, ?", [queryString, start, end] function(err, rows) {
 			connection.release();
 			if (err) {
 			    console.log("Webpages: " + err);
