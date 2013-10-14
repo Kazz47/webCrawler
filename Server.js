@@ -104,19 +104,20 @@ function getWebpages(req, res, next) {
             var numRows;
             var lastPage;
             var start = 0;
-            var end = parseInt(displayMax);
-            connection.query("SELECT COUNT(*) AS c FROM Webpage AS w RIGHT JOIN URL AS u ON u.Id = w.URLId RIGHT JOIN WebpageKeywordJoin as wkj ON w.Id = wkj.WebpageID RIGHT JOIN Keyword AS k ON wkj.KeywordId = k.Id WHERE k.Word REGEXP ? ORDER BY wkj.Num DESC LIMIT ?, ?", [queryString, start, end] function(err, rows) {
+            var end = displayMax;
+            connection.query("SELECT COUNT(*) AS c FROM Webpage AS w RIGHT JOIN URL AS u ON u.Id = w.URLId RIGHT JOIN WebpageKeywordJoin as wkj ON w.Id = wkj.WebpageID RIGHT JOIN Keyword AS k ON wkj.KeywordId = k.Id WHERE k.Word REGEXP ? ORDER BY wkj.Num DESC LIMIT ?, ?", [queryString, start, end], function(err, result) {
                 if (err) {
                     console.log("Webpages: " + err);
                 } else {
                     numRows = result[0].c;
                     lastPage = Math.ceil(numRows/displayMax);
                     if (page < 1) page = 1;
+                    if (lastPage < 1) lastPage = 1;
                     else if (page > lastPage) page = lastPage;
                     start = (page-1)*displayMax;
                     end = displayMax;
 
-            connection.query("SELECT w.Id, w.Title, u.URL, wkj.Num FROM Webpage AS w RIGHT JOIN URL AS u ON u.Id = w.URLId RIGHT JOIN WebpageKeywordJoin as wkj ON w.Id = wkj.WebpageID RIGHT JOIN Keyword AS k ON wkj.KeywordId = k.Id WHERE k.Word REGEXP ? ORDER BY wkj.Num DESC LIMIT ?, ?", [queryString, start, end] function(err, rows) {
+            connection.query("SELECT w.Id, w.Title, u.URL, wkj.Num FROM Webpage AS w RIGHT JOIN URL AS u ON u.Id = w.URLId RIGHT JOIN WebpageKeywordJoin as wkj ON w.Id = wkj.WebpageID RIGHT JOIN Keyword AS k ON wkj.KeywordId = k.Id WHERE k.Word REGEXP ? ORDER BY wkj.Num DESC LIMIT ?, ?", [queryString, start, end], function(err, rows) {
 			connection.release();
 			if (err) {
 			    console.log("Webpages: " + err);
