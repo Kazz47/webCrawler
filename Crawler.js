@@ -142,7 +142,7 @@ function getSiteHeaderInfo(dom, url, callback) {
 	if (descriptionTag)
 		webpage.Description = descriptionTag.content.trim();
 	if (keywordsTag)
-		webpage.Keywords = keywordsTag.content;
+		webpage.Keywords = dom.getElementsByTagName("body").textContent.trim().replace(/\s+/g,' ');
 
 	checkWebpage(webpage, function(err) {
 		callback(err);
