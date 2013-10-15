@@ -105,7 +105,7 @@ function getWebpages(req, res, next) {
             var lastPage;
             var start = 0;
             var end = displayMax;
-            connection.query("SELECT COUNT((SELECT (LN(wkj.Num+1) * (SELECT (SELECT COUNT(*) FROM Webpage)/(SELECT COUNT(*) FROM Webpage AS w LEFT JOIN WebpageKeywordJoin AS wkj ON w.Id = wkj.WebpageId LEFT JOIN Keyword AS k2 ON k2.Id = wkj.KeywordId WHERE k2.Word = k.Word) AS QUOTIENT)) AS sum) FROM WebpageKeywordJoin as wkj LEFT JOIN Keyword AS k ON wkj.KeywordId = k.Id WHERE wkj.WebpageId = w.Id AND k.Word REGEXP ?) AS sum FROM Webpage AS w JOIN URL AS u ON u.Id = w.URLId HAVING sum IS NOT NULL ORDER BY sum DESC LIMIT ?, ?", [queryString, start, end], function(err, result) {
+            connection.query("SELECT COUNT(*) AS c FROM Webpage AS w INNER JOIN URL AS u ON u.Id = w.URLId INNER JOIN WebpageKeywordJoin as wkj ON w.Id = wkj.WebpageID RIGHT JOIN Keyword AS k ON wkj.KeywordId = k.Id WHERE k.Word REGEXP ?", [queryString], function(err, result) {
                 if (err) {
                     console.log("Webpages: " + err);
                 } else {
@@ -117,7 +117,7 @@ function getWebpages(req, res, next) {
                     start = (page-1)*displayMax;
                     end = displayMax;
 
-                    connection.query("SELECT w.Id, w.Title, u.URL, (SELECT (LN(wkj.Num+1) * (SELECT (SELECT COUNT(*) FROM Webpage)/(SELECT COUNT(*) FROM Webpage AS w LEFT JOIN WebpageKeywordJoin AS wkj ON w.Id = wkj.WebpageId LEFT JOIN Keyword AS k2 ON k2.Id = wkj.KeywordId WHERE k2.Word = k.Word) AS QUOTIENT)) AS sum FROM WebpageKeywordJoin as wkj LEFT JOIN Keyword AS k ON wkj.KeywordId = k.Id WHERE wkj.WebpageId = w.Id AND k.Word REGEXP ?) AS sum FROM Webpage AS w JOIN URL AS u ON u.Id = w.URLId HAVING sum IS NOT NULL ORDER BY sum DESC LIMIT ?, ?", [queryString, start, end], function(err, rows) {
+                    connection.query("SELECT w.Id, w.Title, u.URL, SUM(LN(wkj.Num+1) * (SELECT (SELECT COUNT(*) FROM Webpage)/(SELECT COUNT(*) FROM Webpage AS w INNER JOIN WebpageKeywordJoin AS wkj ON w.Id = wkj.WebpageId WHERE wkj.KeywordId = k.Id) AS QUOTIENT)) AS tf_idf_total FROM Webpage AS w INNER JOIN URL AS u ON u.Id = w.URLId INNER JOIN WebpageKeywordJoin as wkj ON w.Id = wkj.WebpageID RIGHT JOIN Keyword AS k ON wkj.KeywordId = k.Id WHERE k.Word REGEXP ? GROUP BY w.Id ORDER BY tf_idf_total DESC LIMIT ?, ?", [queryString, start, end], function(err, rows) {
                         connection.release();
                         if (err) {
                             console.log("Webpages: " + err);
