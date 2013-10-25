@@ -145,7 +145,7 @@ function addSeed(req, res, next) {
         res.write(success.toString());
         res.end();
     });
-    $.post("http://people.cs.und.edu/~kgoehner/515/2/resources/library/addSeed.php", {count:config.settings.maxCrawlSize});
+    $.post("http://people.cs.und.edu/~kgoehner/515/1/resources/library/addSeed.php", {count:config.settings.maxCrawlSize});
     console.log("Posted " + config.settings.maxCrawlSize + " to UND.");
 }
 
