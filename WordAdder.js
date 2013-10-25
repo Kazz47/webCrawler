@@ -103,6 +103,23 @@ WordAdder.prototype.addWordToPage = function(wordId, webpageId, callback) {
 			});
 		}
 	});
+	this.pool.getConnection(function(err, connection) {
+		if (err) {
+			console.log("Add word (Connection): " + err);
+			callback();
+		} else {
+            connection.query("UPDATE Keyword SET DF = DF + 1 WHERE Id = ?", [wordId], function(err, result) {
+				if (err) {
+					console.log("Increment DF: " + err.code);
+					connection.release();
+					callback();
+				} else {
+					connection.release();
+					callback();
+				}
+            });
+		}
+	});
 }
 
 //var adder = new WordAdder();

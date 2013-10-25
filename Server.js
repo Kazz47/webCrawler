@@ -90,22 +90,36 @@ function getWebpages(req, res, next) {
     var displayMax = parseInt(req.query.dspmax);
     var keywords = req.query.keywords;
     if (!displayMax) displayMax = 20;
-    if (!queryString) queryString = ".*";
-    else {
-        queryString = queryString.trim();
-        queryString = queryString.replace(" ", "|");
-    }
+
     res.header('Access-Control-Allow-Origin', 'htt://people.cs.und.edu');
 
     pool.getConnection(function(err, connection) {
         if (err) {
             console.log("Webpages (connection): " + err);
         } else {
+            var countQuery;
+            var selectQuery;
             var numRows;
             var lastPage;
             var start = 0;
             var end = displayMax;
-            connection.query("SELECT COUNT((SELECT (LN(wkj.Num+1) * (SELECT (SELECT COUNT(*) FROM Webpage)/(SELECT COUNT(*) FROM Webpage AS w LEFT JOIN WebpageKeywordJoin AS wkj ON w.Id = wkj.WebpageId LEFT JOIN Keyword AS k2 ON k2.Id = wkj.KeywordId WHERE k2.Word = k.Word) AS QUOTIENT)) AS sum) FROM WebpageKeywordJoin as wkj LEFT JOIN Keyword AS k ON wkj.KeywordId = k.Id WHERE wkj.WebpageId = w.Id AND k.Word REGEXP ?) AS sum FROM Webpage AS w JOIN URL AS u ON u.Id = w.URLId HAVING sum IS NOT NULL ORDER BY sum DESC LIMIT ?, ?", [queryString, start, end], function(err, result) {
+            if (!queryString) {
+                countQuery = "SELECT COUNT(*) FROM Webpage LIMIT ?, ?";
+                countQueryParams = [start, end];
+
+                selectQuery = "SELECT w.Id, w.Title, u.URL FROM Webpage AS w JOIN URL AS u ON u.Id = w.URLId LIMIT ?, ?";
+                selectQueryParams = [start, end];
+            } else {
+                queryString = queryString.trim();
+                queryString = queryString.replace(" ", "|");
+
+                countQuery = "SELECT COUNT((SELECT (LN(wkj.Num+1) * (SELECT (SELECT COUNT(*) FROM Webpage)/(SELECT COUNT(*) FROM Webpage AS w LEFT JOIN WebpageKeywordJoin AS wkj ON w.Id = wkj.WebpageId LEFT JOIN Keyword AS k2 ON k2.Id = wkj.KeywordId WHERE k2.Word = k.Word) AS QUOTIENT)) AS sum) FROM WebpageKeywordJoin as wkj LEFT JOIN Keyword AS k ON wkj.KeywordId = k.Id WHERE wkj.WebpageId = w.Id AND k.Word REGEXP ?) AS sum FROM Webpage AS w JOIN URL AS u ON u.Id = w.URLId HAVING sum IS NOT NULL ORDER BY sum DESC LIMIT ?, ?";
+                countQueryParams = [queryString, start, end];
+
+                selectQuery = "SELECT w.Id, w.Title, u.URL, (SELECT (LN(wkj.Num+1) * (SELECT (SELECT COUNT(*) FROM Webpage)/(SELECT COUNT(*) FROM Webpage AS w LEFT JOIN WebpageKeywordJoin AS wkj ON w.Id = wkj.WebpageId LEFT JOIN Keyword AS k2 ON k2.Id = wkj.KeywordId WHERE k2.Word = k.Word) AS QUOTIENT)) AS sum FROM WebpageKeywordJoin as wkj LEFT JOIN Keyword AS k ON wkj.KeywordId = k.Id WHERE wkj.WebpageId = w.Id AND k.Word REGEXP ?) AS sum FROM Webpage AS w JOIN URL AS u ON u.Id = w.URLId HAVING sum IS NOT NULL ORDER BY sum DESC LIMIT ?, ?";
+                selectQueryParams = [queryString, start, end];
+            }
+            var sqlQuery = connection.query(countQuery, countQueryParams, function(err, result) {
                 if (err) {
                     console.log("Webpages: " + err);
                 } else {
@@ -117,7 +131,7 @@ function getWebpages(req, res, next) {
                     start = (page-1)*displayMax;
                     end = displayMax;
 
-                    connection.query("SELECT w.Id, w.Title, u.URL, (SELECT (LN(wkj.Num+1) * (SELECT (SELECT COUNT(*) FROM Webpage)/(SELECT COUNT(*) FROM Webpage AS w LEFT JOIN WebpageKeywordJoin AS wkj ON w.Id = wkj.WebpageId LEFT JOIN Keyword AS k2 ON k2.Id = wkj.KeywordId WHERE k2.Word = k.Word) AS QUOTIENT)) AS sum FROM WebpageKeywordJoin as wkj LEFT JOIN Keyword AS k ON wkj.KeywordId = k.Id WHERE wkj.WebpageId = w.Id AND k.Word REGEXP ?) AS sum FROM Webpage AS w JOIN URL AS u ON u.Id = w.URLId HAVING sum IS NOT NULL ORDER BY sum DESC LIMIT ?, ?", [queryString, start, end], function(err, rows) {
+                    sqlQuery = connection.query(selectQuery, selectQueryParams, function(err, rows) {
                         connection.release();
                         if (err) {
                             console.log("Webpages: " + err);
@@ -129,8 +143,10 @@ function getWebpages(req, res, next) {
                             res.send(webpages);
                         }
                     });
+                    console.log(sqlQuery.sql);
                 }
             });
+            console.log(sqlQuery.sql);
         }
     });
 }
