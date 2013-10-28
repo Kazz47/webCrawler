@@ -13,6 +13,10 @@ WordAdder.prototype.wordSplitter = function(string) {
 	var words = this.removeSpecialCharacters(string).split(" ");
 	for (var i=0; i<words.length; i++) {
 		words[i] = words[i].replace(/^[']|[']$/, "").toLowerCase();
+        if (words[i].trim().localeCompare("") == 0) {
+            words = words.splice(i, 1);
+            i--;
+        }
 	}
 	return words
 }
@@ -30,17 +34,17 @@ WordAdder.prototype.addWords = function(string, webpageId) {
         var index = 0;
 		while (running < limit && words.length > 0) {
 			var word = words.shift();
-            index++;
-			self.addWord(word, index, webpageId, function() {
-				running--;
-				if (words.length > 0) {
-					wordAddLauncher();
-				} else if (running === 0) {
-					console.log("Done adding URLs.");
-					self.addDAO.close();
-				}
-			});
-			running++;
+                index++;
+                self.addWord(word, index, webpageId, function() {
+                running--;
+                if (words.length > 0) {
+                    wordAddLauncher();
+                } else if (running === 0) {
+                    console.log("Done adding URLs.");
+                    self.addDAO.close();
+                }
+            });
+            running++;
 		}
 	}
 
@@ -57,7 +61,7 @@ WordAdder.prototype.addWord = function(word, index, webpageId, callback) {
 		} else {
             connection.query("SELECT Id FROM Stopword WHERE Word = ?", [word], function(err, result) {
                 if (err) {
-                    console.log("Check stopword: " + erro.code);
+                    console.log("Check stopword: " + err.code);
                     connection.release();
                     callback();
                 } else if (result[0]) {
@@ -72,7 +76,7 @@ WordAdder.prototype.addWord = function(word, index, webpageId, callback) {
                         } else if (result[0]) {
                             connection.release();
                             var wordId = result[0].Id;
-                            self.addWordToPage(wordId, webpageId, function() {
+                            self.addWordToPage(wordId, index, webpageId, function() {
                                 callback();
                             });
                         } else {
@@ -111,7 +115,7 @@ WordAdder.prototype.addWordToPage = function(wordId, index, webpageId, callback)
 					callback();
 				} else {
                     var wpObj = {WebpageId: webpageId, KeywordId: wordId, Position: index};
-                    connection.query("INSERT INTO WebapgePosition SET ?", wpObj, function(err, result) {
+                    connection.query("INSERT INTO WebpagePosition SET ?", wpObj, function(err, result) {
                         if (err) {
                             console.log("Add wp: " + err.code);
                             connection.release();
