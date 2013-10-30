@@ -11,6 +11,9 @@ pool.getConnection(function(err, connection) {
 		connection.query("DELETE FROM Keyword", function(err, result) {
 			if(err) console.log(err);
 		});
+		connection.query("DELETE FROM Stopword", function(err, result) {
+			if(err) console.log(err);
+		});
 		connection.query("DELETE FROM URL", function(err, result) {
 			if(err) console.log(err);
 		});
