@@ -89,6 +89,7 @@ WordAdder.prototype.addWord = function(word, index, webpageId, callback) {
                                     console.log("Add word: " + err.code);
                                     callback();
                                 } else {
+                                    connection.release();
                                     var wordId = result.insertId;
                                     self.addWordToPage(wordId, index, webpageId, function() {
                                         callback();
@@ -104,6 +105,7 @@ WordAdder.prototype.addWord = function(word, index, webpageId, callback) {
 }
 
 WordAdder.prototype.addWordToPage = function(wordId, index, webpageId, callback) {
+    var self = this;
 	this.pool.getConnection(function(err, connection) {
 		if (err) {
 			console.log("Add word (Connection): " + err);
@@ -124,16 +126,19 @@ WordAdder.prototype.addWordToPage = function(wordId, index, webpageId, callback)
                             callback();
                         } else {
                             connection.release();
-                            callback();
+                            self.updateKeywordDF(wordId, callback);
                         }
                     });
 				}
 			});
 		}
 	});
+}
+
+WordAdder.prototype.updateKeywordDF = function(wordId, callback) {
 	this.pool.getConnection(function(err, connection) {
 		if (err) {
-			console.log("Add word (Connection): " + err);
+			console.log("Increment DF (Connection): " + err);
 			callback();
 		} else {
             connection.query("UPDATE Keyword SET DF = DF + 1 WHERE Id = ?", [wordId], function(err, result) {
