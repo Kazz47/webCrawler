@@ -25,6 +25,9 @@ pool.getConnection(function(err, connection) {
 		});
 		connection.query("DELETE FROM WebpageKeywordJoin", function(err, result) {
 			if(err) console.log(err);
+		});
+		connection.query("DELETE FROM WebpagePosition", function(err, result) {
+			if(err) console.log(err);
 			connection.release();
 			clearDAO.close();
 		});
