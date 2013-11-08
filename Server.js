@@ -91,7 +91,7 @@ function getWebpages(req, res, next) {
     var keywords = req.query.keywords;
     if (!displayMax) displayMax = 20;
 
-    res.header('Access-Control-Allow-Origin', 'htt://people.cs.und.edu');
+    res.header('Access-Control-Allow-Origin', 'http://people.cs.und.edu');
 
     pool.getConnection(function(err, connection) {
         if (err) {

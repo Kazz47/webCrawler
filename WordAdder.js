@@ -1,3 +1,5 @@
+var stemmer = require("porter-stemmer").stemmer;
+
 function WordAdder() {
 	this.DAO = require("./dao");
 	this.addDAO = new this.DAO();
@@ -12,7 +14,7 @@ WordAdder.prototype.removeSpecialCharacters = function(string) {
 WordAdder.prototype.wordSplitter = function(string) {
 	var words = this.removeSpecialCharacters(string).split(" ");
 	for (var i=0; i<words.length; i++) {
-		words[i] = words[i].replace(/^[']|[']$/, "").toLowerCase();
+		words[i] = stemmer(words[i].replace(/^[']|[']$/, "").toLowerCase());
         if (words[i].trim().localeCompare("") == 0) {
             words = words.splice(i, 1);
             i--;
@@ -29,13 +31,13 @@ WordAdder.prototype.addWords = function(string, webpageId) {
 
 	var running = 0;
 	var limit = 2;
+    var index = 0;
 
 	function wordAddLauncher() {
-        var index = 0;
 		while (running < limit && words.length > 0) {
-			var word = words.shift();
-                index++;
-                self.addWord(word, index, webpageId, function() {
+            var word = words.shift();
+            index++;
+            self.addWord(word, index, webpageId, function() {
                 running--;
                 if (words.length > 0) {
                     wordAddLauncher();
@@ -87,6 +89,7 @@ WordAdder.prototype.addWord = function(word, index, webpageId, callback) {
                                     console.log("Add word: " + err.code);
                                     callback();
                                 } else {
+                                    connection.release();
                                     var wordId = result.insertId;
                                     self.addWordToPage(wordId, index, webpageId, function() {
                                         callback();
@@ -102,6 +105,7 @@ WordAdder.prototype.addWord = function(word, index, webpageId, callback) {
 }
 
 WordAdder.prototype.addWordToPage = function(wordId, index, webpageId, callback) {
+    var self = this;
 	this.pool.getConnection(function(err, connection) {
 		if (err) {
 			console.log("Add word (Connection): " + err);
@@ -122,16 +126,19 @@ WordAdder.prototype.addWordToPage = function(wordId, index, webpageId, callback)
                             callback();
                         } else {
                             connection.release();
-                            callback();
+                            self.updateKeywordDF(wordId, callback);
                         }
                     });
 				}
 			});
 		}
 	});
+}
+
+WordAdder.prototype.updateKeywordDF = function(wordId, callback) {
 	this.pool.getConnection(function(err, connection) {
 		if (err) {
-			console.log("Add word (Connection): " + err);
+			console.log("Increment DF (Connection): " + err);
 			callback();
 		} else {
             connection.query("UPDATE Keyword SET DF = DF + 1 WHERE Id = ?", [wordId], function(err, result) {
