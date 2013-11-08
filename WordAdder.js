@@ -63,7 +63,7 @@ WordAdder.prototype.addWord = function(word, index, webpageId, callback) {
 		} else {
             connection.query("SELECT Id FROM Stopword WHERE Word = ?", [word], function(err, result) {
                 if (err) {
-                    console.log("Check stopword: " + err.code);
+                    console.log("Check Stopword: " + err.code);
                     connection.release();
                     callback();
                 } else if (result[0]) {
