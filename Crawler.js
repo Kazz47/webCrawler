@@ -41,6 +41,7 @@ function crawlOutdatedPages(depth) {
 			connection.query("SELECT COUNT(*) AS c FROM Webpage", function(err , result) {
 				if (result[0].c < config.settings.maxCrawlSize) {
 					connection.query("SELECT u.Id, u.URL FROM URL AS u LEFT JOIN Webpage AS w ON u.Id = w.URLId WHERE w.URLId IS NULL", function(err, rows) {
+                        connection.release();
 						if (err) {
 							console.log(err);
 							crawlerDAO.close();
@@ -62,14 +63,15 @@ function crawlOutdatedPages(depth) {
 										parseUrl(url, function(err) {
 											running--;
 											if (err) {
-												rows = [];
+                                                console.log("There was an error: " + rows.length);
+												//rows = [];
 											}
 											if (rows.length > 0) {
 												urlParseLauncher();
 											} else if (running == 0) {
 												console.log("Done!");
-												setTimeout(crawlOutdatedPages, 2000);
-												//crawlerDAO.close();
+												//setTimeout(crawlOutdatedPages, 2000);
+												crawlerDAO.close();
 											}
 										});
 										running++;
@@ -78,9 +80,9 @@ function crawlOutdatedPages(depth) {
 								urlParseLauncher();
 							}
 						}
-						connection.release();
 					});
 				} else {
+                    connection.release();
 					//delete require.cache[require.resolve("../../resources/config.json")]
 					//config = require("../../resources/config.json");
 					//setTimeout(crawlOutdatedPages, 2000);
@@ -98,11 +100,15 @@ function parseUrl(URL, callback) {
 		jsdom.env({
 			url: URL.url,
 			scripts: ["http://code.jquery.com/jquery.js"],
-			done: function (errors, window) {
-				getSiteHeaderInfo(window, URL, function(err) {
-					callback(err);
-				});
-				//printSite(window.document, window.url);
+			done: function (err, window) {
+                if (err) {
+                    console.log("Parse URL: " + err);
+                    callback(err);
+                } else {
+                    getSiteHeaderInfo(window, URL, function(err) {
+                        callback(err);
+                    });
+                }
 			}
 		});
 	}
@@ -158,7 +164,7 @@ function checkURLs(urls, callback) {
 			console.log("CheckURL (Connection): " + err);
 			callback(err);
 		} else {
-			var query = connection.query("SELECT u.URL FROM URL AS u WHERE u.IsSeed IS TRUE", function(err, seeds) {
+			connection.query("SELECT u.URL FROM URL AS u WHERE u.IsSeed IS TRUE", function(err, seeds) {
 				connection.release();
 				if(err) {
 					console.log("CheckURL: " + err);
@@ -188,8 +194,7 @@ function checkWebpage(webpage, callback) {
 			console.log("CheckWebpage (Connection): " + err);
 			callback(err);
 		} else {
-			var query = connection.query("SELECT w.Id FROM Webpage AS w \
-					WHERE w.URLId = ?", [webpage.URLId], function(err, rows) {
+			connection.query("SELECT w.Id FROM Webpage AS w WHERE w.URLId = ?", [webpage.URLId], function(err, rows) {
 				connection.release();
 				if(err) {
 					console.log("CheckWebpage: " + err);
@@ -224,7 +229,7 @@ function addNewWebpage(webpage, callback) {
 					callback(new Error("Too many pages!"));
 				} else {
 					var webpageSQL = {URLId: webpage.URLId, Title: webpage.Title, Description: webpage.Description};
-					var query = connection.query("INSERT INTO Webpage SET ?", webpageSQL, function(err, result) {
+					connection.query("INSERT INTO Webpage SET ?", webpageSQL, function(err, result) {
 						connection.release();
 						if(err) {
 							console.log("Add Webpage: " + err);

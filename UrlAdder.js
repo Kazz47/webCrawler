@@ -24,9 +24,10 @@ function URL(url, seed) {
 UrlAdder.prototype.addUrls = function(urls) {
 	if (!urls) return;
 	var self = this;
-	
+
 	var running = 0;
 	var limit = 2;
+    console.log("Adding " + urls.length + " URLs");
 	function urlAddLauncher() {
 		while (running < limit && urls.length > 0) {
 			var url = urls.shift();
@@ -35,20 +36,25 @@ UrlAdder.prototype.addUrls = function(urls) {
 				if (urls.length > 0) {
 					urlAddLauncher();
 				} else if (running === 0) {
-					console.log("Done adding URLs.");
+					console.log("Done adding URLs");
 					self.addDAO.close();
+                    console.log("URL DAO closed");
 				}
 			});
 			running++;
 		}
 	}
-	urlAddLauncher();
+    if (urls.length > 0) urlAddLauncher();
+    else self.addDAO.close();
 }
 
 // Add new url.
 UrlAdder.prototype.addUrl = function(url, seed, callback) {
 	this.pool.getConnection(function(err, connection) {
-		if (err) console.log("Add URL (Connection): " + err);
+		if (err) {
+            console.log("Add URL (Connection): " + err);
+            callback();
+        }
 		else {
 			hashIndex = url.indexOf("#");
 			if (hashIndex > 0) url = url.substring(0, hashIndex);
@@ -57,25 +63,24 @@ UrlAdder.prototype.addUrl = function(url, seed, callback) {
 			var result = url.match(regex);
 			if (commonMediaFiles.indexOf(result[1]) < 0) {
 				var seedHash = crypto.createHash("md5").update(seed).digest("hex");
-				var query = connection.query("SELECT u.Id FROM URL AS u WHERE u.Hash = ?",
-						[seedHash], function(err, result) {
+				connection.query("SELECT u.Id FROM URL AS u WHERE u.Hash = ?", [seedHash], function(err, result) {
 					if(err) {
-						console.log("Check URL: " + err.code);
 						connection.release();
+						console.log("Check URL: " + err.code);
 						callback();
 					} else {
 						var seedId = result[0].Id;
 						var urlHash = crypto.createHash("md5").update(url).digest("hex");
 						var urlObj = {Hash: urlHash, URL: url, SeedId: seedId, DomainName: jsURL.parse(url).hostname};
 						connection.query("INSERT INTO URL SET ?", urlObj, function(err, result) {
+                            connection.release();
 							if(err && err.code != "ER_DUP_ENTRY") console.log("Add URL: " + err.code);
-							connection.release();
 							callback();
 						});
 					}
 				});
 			} else {
-				connection.release();
+                connection.release();
 				callback();
 			}
 		}

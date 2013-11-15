@@ -33,6 +33,7 @@ WordAdder.prototype.addWords = function(string, webpageId) {
 	var limit = 2;
     var index = 0;
 
+    console.log("Adding " + words.length + " words");
 	function wordAddLauncher() {
 		while (running < limit && words.length > 0) {
             var word = words.shift();
@@ -42,15 +43,16 @@ WordAdder.prototype.addWords = function(string, webpageId) {
                 if (words.length > 0) {
                     wordAddLauncher();
                 } else if (running === 0) {
-                    console.log("Done adding URLs.");
+                    console.log("Done adding words");
                     self.addDAO.close();
+                    console.log("Word DAO closed");
                 }
             });
             running++;
 		}
 	}
-
-	wordAddLauncher();
+    if (words.lengt > 0) wordAddLauncher();
+    else self.addDAO.close();
 }
 
 // Add new word.
@@ -63,8 +65,8 @@ WordAdder.prototype.addWord = function(word, index, webpageId, callback) {
 		} else {
             connection.query("SELECT Id FROM Stopword WHERE Word = ?", [word], function(err, result) {
                 if (err) {
-                    console.log("Check Stopword: " + err.code);
                     connection.release();
+                    console.log("Check Stopword: " + err.code);
                     callback();
                 } else if (result[0]) {
                     connection.release();
@@ -72,8 +74,8 @@ WordAdder.prototype.addWord = function(word, index, webpageId, callback) {
                 } else {
                     connection.query("SELECT Id FROM Keyword WHERE Word = ?", [word], function(err, result) {
                         if (err) {
-                            console.log("Check word existance: " + err.code);
                             connection.release();
+                            console.log("Check word existance: " + err.code);
                             callback();
                         } else if (result[0]) {
                             connection.release();
@@ -89,7 +91,6 @@ WordAdder.prototype.addWord = function(word, index, webpageId, callback) {
                                     console.log("Add word: " + err.code);
                                     callback();
                                 } else {
-                                    connection.release();
                                     var wordId = result.insertId;
                                     self.addWordToPage(wordId, index, webpageId, function() {
                                         callback();
@@ -108,25 +109,26 @@ WordAdder.prototype.addWordToPage = function(wordId, index, webpageId, callback)
     var self = this;
 	this.pool.getConnection(function(err, connection) {
 		if (err) {
-			console.log("Add word (Connection): " + err);
+			console.log("Add word to page (Connection): " + err);
 			callback();
 		} else {
 			var wkjObj = {WebpageId: webpageId, KeywordId: wordId};
 			connection.query("INSERT INTO WebpageKeywordJoin SET ? ON DUPLICATE KEY UPDATE Num=Num+1", wkjObj, function(err, result) {
 				if (err) {
-					console.log("Add wkj: " + err.code);
 					connection.release();
+					console.log("Add wkj: " + err.code);
 					callback();
 				} else {
                     var wpObj = {WebpageId: webpageId, KeywordId: wordId, Position: index};
                     connection.query("INSERT INTO WebpagePosition SET ?", wpObj, function(err, result) {
+                        connection.release();
                         if (err) {
                             console.log("Add wp: " + err.code);
-                            connection.release();
                             callback();
                         } else {
-                            connection.release();
-                            self.updateKeywordDF(wordId, callback);
+                            self.updateKeywordDF(wordId, function() {
+                                callback();
+                            });
                         }
                     });
 				}
@@ -142,12 +144,11 @@ WordAdder.prototype.updateKeywordDF = function(wordId, callback) {
 			callback();
 		} else {
             connection.query("UPDATE Keyword SET DF = DF + 1 WHERE Id = ?", [wordId], function(err, result) {
+                connection.release();
 				if (err) {
 					console.log("Increment DF: " + err.code);
-					connection.release();
 					callback();
 				} else {
-					connection.release();
 					callback();
 				}
             });
