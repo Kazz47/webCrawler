@@ -42,7 +42,7 @@ WordAdder.prototype.addWords = function(string, webpageId) {
                 running--;
                 if (words.length > 0) {
                     wordAddLauncher();
-                } else if (running === 0) {
+                } else if (running <= 0) {
                     console.log("Done adding words");
                     self.addDAO.close();
                     console.log("Word DAO closed");
@@ -51,7 +51,7 @@ WordAdder.prototype.addWords = function(string, webpageId) {
             running++;
 		}
 	}
-    if (words.lengt > 0) wordAddLauncher();
+    if (words.length > 0) wordAddLauncher();
     else self.addDAO.close();
 }
 
