@@ -62,6 +62,7 @@ function crawlOutdatedPages(depth) {
 										var url = new URL(next.Id, next.URL);
 										parseUrl(url, function(err) {
 											running--;
+                                            console.log("***** Remaining: " + rows.length);
 											if (err) {
                                                 console.log("There was an error: " + rows.length);
 												//rows = [];
@@ -237,14 +238,17 @@ function addNewWebpage(webpage, callback) {
 							callback(err);
 						} else {
 							webpage.Id = result.insertId;
-							if (webpage.Keywords.length === 0) callback();
-							else {
+							if (webpage.Keywords.length > 0) {
 								var keywordAdder = new WordAdder();
+                                console.log("Adding " + webpage.Keywords.length + " keywords.");
 								keywordAdder.addWords(webpage.Keywords.join(' '), webpage.Id);
-								var descriptionAdder = new WordAdder();
-								descriptionAdder.addWords(webpage.Description, webpage.Id);
-								callback();
 							}
+                            if (webpage.Description != null) {
+								var descriptionAdder = new WordAdder();
+                                console.log("Adding description.");
+								descriptionAdder.addWords(webpage.Description, webpage.Id);
+                            }
+                            callback();
 						}
 					});
 				}
@@ -266,15 +270,18 @@ function updateWebpage(webpage, callback) {
 					console.log("Update Webpage: " + err);
 					callback(err);
 				} else {
-					webpage.Id = result.insertId;
-					if (webpage.Keywords.length === 0) callback();
-					else {
-						var keywordAdder = new WordAdder();
-						keywordAdder.addWords(webpage.Keywords.join(' '), webpage.Id);
-						var descriptionAdder = new WordAdder();
-						descriptionAdder.addWords(webpage.Description, webpage.Id);
-						callback();
-					}
+                    webpage.Id = result.insertId;
+                    if (webpage.Keywords.length > 0) {
+                        var keywordAdder = new WordAdder();
+                        console.log("Adding " + webpage.Keywords.length + " keywords.");
+                        keywordAdder.addWords(webpage.Keywords.join(' '), webpage.Id);
+                    }
+                    if (webpage.Description != null) {
+                        var descriptionAdder = new WordAdder();
+                        console.log("Adding description.");
+                        descriptionAdder.addWords(webpage.Description, webpage.Id);
+                    }
+                    callback();
 				}
 			});
 		}

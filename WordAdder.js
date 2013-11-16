@@ -15,8 +15,8 @@ WordAdder.prototype.wordSplitter = function(string) {
 	var words = this.removeSpecialCharacters(string).split(" ");
 	for (var i=0; i<words.length; i++) {
 		words[i] = stemmer(words[i].replace(/^[']|[']$/, "").toLowerCase());
-        if (words[i].trim().localeCompare("") == 0) {
-            words = words.splice(i, 1);
+        if (words[i].trim() === "") {
+            words.splice(i, 1);
             i--;
         }
 	}
@@ -162,7 +162,7 @@ WordAdder.prototype.updateKeywordDF = function(wordId, callback) {
 	});
 }
 
-//var adder = new WordAdder();
-//adder.addWords("'Oh, you can't help that,' said the Cat: 'we're all mad here. I'm mad. You're mad.'", 1);
+var adder = new WordAdder();
+adder.addWords("… Author's name: …", 1);
 
 module.exports = WordAdder;
