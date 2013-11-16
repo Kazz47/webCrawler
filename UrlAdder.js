@@ -11,8 +11,8 @@ var flr = require("./FileLineReader");
 var commonMediaFiles = ["zip", "pdf", "mp3", "jpg", "rar", "exe", "wvm", "doc", "avi", "ppt", "mpg", "tif", "wav", "mov", "psd", "wma", "sitx", "sit", "esp", "cdr", "ai", "xls", "mp4", "txt", "m4a", "rmvb", "bmp", "pps", "aif", "pub", "dwg", "gif", "qbb", "mpeg", "indd", "swf", "asf", "png", "dat", "rm", "mdb", "chm", "jar", "dvf", "dss", "dmg", "iso", "flv", "wpd", "cda", "m4b", "7z", "gz", "fla", "qxd", "rtf", "msi", "jpg", "jpeg", "m4v", "ogg", "torrent", "mp2", "bat", "sql"];
 function UrlAdder() {
 	this.DAO = require("./dao");
-	this.addDAO = new this.DAO();
-	this.pool = this.addDAO.pool;
+	this.addDAO = null; 
+	this.pool = null;
 }
 
 function URL(url, seed) {
@@ -22,8 +22,11 @@ function URL(url, seed) {
 }
 
 UrlAdder.prototype.addUrls = function(urls) {
-	if (!urls) return;
+	if (urls.length <= 0) return;
 	var self = this;
+
+	this.addDAO = new this.DAO();
+	this.pool = this.addDAO.pool;
 
 	var running = 0;
 	var limit = 2;
@@ -44,8 +47,7 @@ UrlAdder.prototype.addUrls = function(urls) {
 			running++;
 		}
 	}
-    if (urls.length > 0) urlAddLauncher();
-    else self.addDAO.close();
+    urlAddLauncher();
 }
 
 // Add new url.

@@ -2,8 +2,8 @@ var stemmer = require("porter-stemmer").stemmer;
 
 function WordAdder() {
 	this.DAO = require("./dao");
-	this.addDAO = new this.DAO();
-	this.pool = this.addDAO.pool;
+	this.addDAO = null;
+	this.pool = null;
 }
 
 WordAdder.prototype.removeSpecialCharacters = function(string) {
@@ -24,10 +24,17 @@ WordAdder.prototype.wordSplitter = function(string) {
 }
 
 WordAdder.prototype.addWords = function(string, webpageId) {
-	if (!string) return;
+	if (!string) {
+		return;
+	}
 	var self = this;
 
 	var words = this.wordSplitter(string.toLowerCase());
+
+	if (words.length <= 0) return;
+
+	this.addDAO = new this.DAO();
+	this.pool = this.addDAO.pool;
 
 	var running = 0;
 	var limit = 2;
@@ -51,8 +58,7 @@ WordAdder.prototype.addWords = function(string, webpageId) {
             running++;
 		}
 	}
-    if (words.length > 0) wordAddLauncher();
-    else self.addDAO.close();
+    wordAddLauncher();
 }
 
 // Add new word.

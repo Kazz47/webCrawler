@@ -13,7 +13,7 @@ var pool = crawlerDAO.pool;
 if (process.argv[2]) {
     config.settings.maxCrawlSize = process.argv[2];
 }
-crawlOutdatedPages();
+setTimeout(crawlOutdatedPages(), 2000);
 
 function URL(id, url, seed) {
 	this.id = id;
@@ -72,6 +72,7 @@ function crawlOutdatedPages(depth) {
 												console.log("Done!");
 												//setTimeout(crawlOutdatedPages, 2000);
 												crawlerDAO.close();
+												console.log("Closed main DAO");
 											}
 										});
 										running++;
