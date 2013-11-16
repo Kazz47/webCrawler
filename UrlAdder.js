@@ -74,11 +74,17 @@ UrlAdder.prototype.addUrl = function(url, seed, callback) {
 						var seedId = result[0].Id;
 						var urlHash = crypto.createHash("md5").update(url).digest("hex");
 						var urlObj = {Hash: urlHash, URL: url, SeedId: seedId, DomainName: jsURL.parse(url).hostname};
-						connection.query("INSERT INTO URL SET ?", urlObj, function(err, result) {
-                            connection.release();
-							if(err && err.code != "ER_DUP_ENTRY") console.log("Add URL: " + err.code);
-							callback();
-						});
+                        function urlAddLauncher() {
+                            connection.query("INSERT INTO URL SET ?", urlObj, function(err, result) {
+                                if(err && err.code != "ER_DUP_ENTRY") console.log("Add URL: " + err.code);
+                                if(err && err.code == "ER_CON_COUNT_ERROR") setTimeout(urlAddLauncher(), 5000);
+                                else {
+                                    connection.release();
+                                    callback();
+                                }
+                            });
+                        }
+                        urlAddLauncher();
 					}
 				});
 			} else {
