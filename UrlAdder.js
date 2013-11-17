@@ -54,14 +54,14 @@ UrlAdder.prototype.addUrls = function(urls) {
 UrlAdder.prototype.addUrl = function(url, seed, callback) {
     var self = this;
     var time = 1000;
-    function connectionLooper() {
+    function connectionLooper(time) {
         self.pool.getConnection(function(err, connection) {
             if (err) {
                 console.log("Add URL (Connection): " + err);
                 if (err.code == "ER_CON_COUNT_ERROR") {
                     time = time * 2;
                     console.log("Sleeping for " + time/1000 + " seconds");
-                    setTimeout(connectionLooper(), time);
+                    setTimeout(connectionLooper(time), time);
                 } else {
                     callback();
                 }
@@ -108,7 +108,7 @@ UrlAdder.prototype.addUrl = function(url, seed, callback) {
             }
         });
     }
-    connectionLooper();
+    connectionLooper(time);
 }
 
 UrlAdder.prototype.addSeed = function(url, callback) {
