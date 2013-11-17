@@ -68,7 +68,7 @@ WordAdder.prototype.addWord = function(word, index, webpageId, callback) {
     function addWordLooper() {
         self.pool.getConnection(function(err, connection) {
             if (err) {
-                console.log("add word (connection): " + err);
+                console.log("Add word (connection): " + err);
                 if (err.code == "ER_CON_COUNT_ERROR") {
                     time = time * 2;
                     console.log("Sleeping for " + time/1000 + " seconds");
@@ -77,19 +77,19 @@ WordAdder.prototype.addWord = function(word, index, webpageId, callback) {
                     callback();
                 }
             } else {
-                connection.query("select id from stopword where word = ?", [word], function(err, result) {
+                connection.query("SELECT Id FROM Stopword WHERE Word = ?", [word], function(err, result) {
                     if (err) {
                         connection.release();
-                        console.log("check stopword: " + err.code);
+                        console.log("Check Stopword: " + err.code);
                         callback();
                     } else if (result[0]) {
                         connection.release();
                         callback();
                     } else {
-                        connection.query("select id from keyword where word = ?", [word], function(err, result) {
+                        connection.query("SELECT Id FROM Keyword WHERE Word = ?", [word], function(err, result) {
                             if (err) {
                                 connection.release();
-                                console.log("check word existance: " + err.code);
+                                console.log("Check word existance: " + err.code);
                                 callback();
                             } else if (result[0]) {
                                 connection.release();
@@ -99,10 +99,10 @@ WordAdder.prototype.addWord = function(word, index, webpageId, callback) {
                                 });
                             } else {
                                 var wordobj = {word: word};
-                                connection.query("insert into keyword set ?", wordobj, function(err, result) {
+                                connection.query("INSERT INTO Keyword SET ?", wordobj, function(err, result) {
                                     connection.release();
                                     if (err) {
-                                        console.log("add word: " + err.code);
+                                        console.log("Add word: " + err.code);
                                         callback();
                                     } else {
                                         var wordid = result.insertid;
