@@ -59,7 +59,7 @@ UrlAdder.prototype.addUrl = function(url, seed, callback) {
             if (err) {
                 console.log("Add URL (Connection): " + err);
                 if (err.code == "ER_CON_COUNT_ERROR") {
-                    console.log("Sleeping for " + time/1000 = " seconds");
+                    console.log("Sleeping for " + time/1000 + " seconds");
                     setTimeout(connectionLooper(), time);
                 } else {
                     callback();
