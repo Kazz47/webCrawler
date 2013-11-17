@@ -112,8 +112,12 @@ UrlAdder.prototype.addUrl = function(url, seed, callback) {
 
 UrlAdder.prototype.addSeed = function(url, callback) {
 	if (!url) return;
+
+	this.addDAO = new this.DAO();
+	this.pool = this.addDAO.pool;
+
 	var self = this;
-	self.pool.getConnection(function(err, connection) {
+	this.pool.getConnection(function(err, connection) {
 		if (err) {
             console.log("Add Seed (Connection): " + err);
             callback(false);
