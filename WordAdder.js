@@ -93,20 +93,20 @@ WordAdder.prototype.addWord = function(word, index, webpageId, callback) {
                                 callback();
                             } else if (result[0]) {
                                 connection.release();
-                                var wordid = result[0].id;
-                                self.addwordtopage(wordid, index, webpageid, function() {
+                                var wordId = result[0].Id;
+                                self.addwordtopage(wordId, index, webpageId, function() {
                                     callback();
                                 });
                             } else {
-                                var wordobj = {word: word};
-                                connection.query("INSERT INTO Keyword SET ?", wordobj, function(err, result) {
+                                var wordObj = {Word: word};
+                                connection.query("INSERT INTO Keyword SET ?", wordObj, function(err, result) {
                                     connection.release();
                                     if (err) {
                                         console.log("Add word: " + err.code);
                                         callback();
                                     } else {
-                                        var wordid = result.insertid;
-                                        self.addwordtopage(wordid, index, webpageid, function() {
+                                        var wordId = result.insertId;
+                                        self.addwordtopage(wordId, index, webpageId, function() {
                                             callback();
                                         });
                                     }
