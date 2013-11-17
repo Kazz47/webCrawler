@@ -52,52 +52,62 @@ UrlAdder.prototype.addUrls = function(urls) {
 
 // Add new url.
 UrlAdder.prototype.addUrl = function(url, seed, callback) {
-	this.pool.getConnection(function(err, connection) {
-		if (err) {
-            console.log("Add URL (Connection): " + err);
-            callback();
-        }
-		else {
-			hashIndex = url.indexOf("#");
-			if (hashIndex > 0) url = url.substring(0, hashIndex);
-			url = url.trim().replace(/\/+$/, "");
-			var regex = /.+\.([^?]+)(\?|$)/;
-			var result = url.match(regex);
-			if (commonMediaFiles.indexOf(result[1]) < 0) {
-				var seedHash = crypto.createHash("md5").update(seed).digest("hex");
-				connection.query("SELECT u.Id FROM URL AS u WHERE u.Hash = ?", [seedHash], function(err, result) {
-					if(err) {
-						connection.release();
-						console.log("Check URL: " + err.code);
-						callback();
-					} else {
-						var seedId = result[0].Id;
-						var urlHash = crypto.createHash("md5").update(url).digest("hex");
-						var urlObj = {Hash: urlHash, URL: url, SeedId: seedId, DomainName: jsURL.parse(url).hostname};
-                        var time = 2000;
-                        function urlAddLauncher() {
-                            connection.query("INSERT INTO URL SET ?", urlObj, function(err, result) {
-                                if(err && err.code != "ER_DUP_ENTRY") console.log("Add URL: " + err.code);
-                                if(err && err.code == "ER_CON_COUNT_ERRhttp://people.cs.und.edu/~wenchen/course/515/OR") {
-                                    time = time * 2;
-                                    console.log("Sleep for " + time);
-                                    setTimeout(urlAddLauncher(), time);
-                                }
-                                else {
-                                    connection.release();
-                                    callback();
-                                }
-                            });
+    var time = 2000;
+    function connectionLooper() {
+        this.pool.getConnection(function(err, connection) {
+            if (err) {
+                console.log("Add URL (Connection): " + err);
+                if (err.code == "ER_CON_COUNT_ERROR") {
+                    time = time * 2;
+                    console.log("Sleeping for " + time/1000 = " seconds");
+                    setTimeout(connectionLooper(), time);
+                } else {
+                    callback();
+                }
+            }
+            else {
+                hashIndex = url.indexOf("#");
+                if (hashIndex > 0) url = url.substring(0, hashIndex);
+                url = url.trim().replace(/\/+$/, "");
+                var regex = /.+\.([^?]+)(\?|$)/;
+                var result = url.match(regex);
+                if (commonMediaFiles.indexOf(result[1]) < 0) {
+                    var seedHash = crypto.createHash("md5").update(seed).digest("hex");
+                    connection.query("SELECT u.Id FROM URL AS u WHERE u.Hash = ?", [seedHash], function(err, result) {
+                        if(err) {
+                            connection.release();
+                            console.log("Check URL: " + err.code);
+                            callback();
+                        } else {
+                            var seedId = result[0].Id;
+                            var urlHash = crypto.createHash("md5").update(url).digest("hex");
+                            var urlObj = {Hash: urlHash, URL: url, SeedId: seedId, DomainName: jsURL.parse(url).hostname};
+                            var time = 2000;
+                            function urlAddLauncher() {
+                                connection.query("INSERT INTO URL SET ?", urlObj, function(err, result) {
+                                    if(err && err.code != "ER_DUP_ENTRY") console.log("Add URL: " + err.code);
+                                    if(err && err.code == "ER_CON_COUNT_ERRhttp://people.cs.und.edu/~wenchen/course/515/OR") {
+                                        time = time * 2;
+                                        console.log("Sleep for " + time);
+                                        setTimeout(urlAddLauncher(), time);
+                                    }
+                                    else {
+                                        connection.release();
+                                        callback();
+                                    }
+                                });
+                            }
+                            urlAddLauncher();
                         }
-                        urlAddLauncher();
-					}
-				});
-			} else {
-                connection.release();
-				callback();
-			}
-		}
-	});
+                    });
+                } else {
+                    connection.release();
+                    callback();
+                }
+            }
+        });
+    }
+    connectionLooper();
 }
 
 UrlAdder.prototype.addSeed = function(url, callback) {

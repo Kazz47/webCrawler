@@ -172,7 +172,7 @@ WordAdder.prototype.updateKeywordDF = function(wordId, callback) {
 	});
 }
 
-var adder = new WordAdder();
-adder.addWords("… Author's name: …", 1);
+//var adder = new WordAdder();
+//adder.addWords("… Author's name: …", 1);
 
 module.exports = WordAdder;
