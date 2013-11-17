@@ -53,12 +53,13 @@ UrlAdder.prototype.addUrls = function(urls) {
 // Add new url.
 UrlAdder.prototype.addUrl = function(url, seed, callback) {
     var self = this;
-    var time = 10000;
+    var time = 1000;
     function connectionLooper() {
         self.pool.getConnection(function(err, connection) {
             if (err) {
                 console.log("Add URL (Connection): " + err);
                 if (err.code == "ER_CON_COUNT_ERROR") {
+                    time = time * 2;
                     console.log("Sleeping for " + time/1000 + " seconds");
                     setTimeout(connectionLooper(), time);
                 } else {

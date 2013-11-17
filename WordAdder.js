@@ -64,12 +64,13 @@ WordAdder.prototype.addWords = function(string, webpageId) {
 // Add new word.
 WordAdder.prototype.addWord = function(word, index, webpageId, callback) {
 	var self = this;
-    var time = 5000;
+    var time = 1000;
     function addWordLooper() {
         self.pool.getConnection(function(err, connection) {
             if (err) {
                 console.log("Add word (connection): " + err);
                 if (err.code == "ER_CON_COUNT_ERROR") {
+                    time = time * 2;
                     console.log("Sleeping for " + time/1000 + " seconds");
                     setTimeout(addWordLooper(), time);
                 } else {
