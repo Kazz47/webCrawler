@@ -43,6 +43,9 @@ function setMaxCrawlSize(req, res, next) {
         'Content-Type': 'text/plain'
     });
     config.settings.maxCrawlSize = req.query.size;
+    var jsonFile = fopen("./config.json", "w+");
+    fwrite(jsonFile, config);
+    fclose(jsonFile);
     res.write(true.toString());
     res.end();
 }
