@@ -30,7 +30,7 @@ UrlAdder.prototype.addUrls = function(urls) {
 
 	var running = 0;
 	var limit = 2;
-    console.log("Adding " + urls.length + " URLs");
+    //console.log("Adding " + urls.length + " URLs");
 	function urlAddLauncher() {
 		while (running < limit && urls.length > 0) {
 			var url = urls.shift();
@@ -39,7 +39,7 @@ UrlAdder.prototype.addUrls = function(urls) {
 				if (urls.length > 0) {
 					urlAddLauncher();
 				} else if (running === 0) {
-					console.log("Done adding URLs");
+					//console.log("Done adding URLs");
 					self.addDAO.close();
                     console.log("URL DAO closed");
 				}

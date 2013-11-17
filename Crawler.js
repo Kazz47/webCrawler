@@ -46,7 +46,7 @@ function crawlOutdatedPages(depth) {
 							console.log(err);
 							crawlerDAO.close();
 						} else {
-                            console.log("Rows: " + rows.length);
+                            //console.log("Rows: " + rows.length);
 							if (rows.length === 0) {
 								//delete require.cache[require.resolve("../../resources/config.json")]
 								//config = require("../../resources/config.json");
@@ -62,7 +62,6 @@ function crawlOutdatedPages(depth) {
 										var url = new URL(next.Id, next.URL);
 										parseUrl(url, function(err) {
 											running--;
-                                            console.log("***** Remaining: " + rows.length);
 											if (err) {
                                                 console.log("There was an error: " + rows.length);
 												//rows = [];
@@ -185,7 +184,6 @@ function checkURLs(urls, callback) {
 					urlAdder.addUrls(confirmedURLs);
 				}
 			});
-		//console.log("Query: " + query.sql);
 		}
 	});
 }
@@ -213,7 +211,6 @@ function checkWebpage(webpage, callback) {
 					}
 				}
 			});
-		//console.log("Query: " + query.sql);
 		}
 	});
 }
@@ -227,7 +224,6 @@ function addNewWebpage(webpage, callback) {
 			connection.query("SELECT COUNT(*) AS c FROM Webpage", function(err , result) {
 				connection.release();
 				if (result[0].c > config.settings.maxCrawlSize) {
-					console.log("Too many pages!");
 					callback(new Error("Too many pages!"));
 				} else {
 					var webpageSQL = {URLId: webpage.URLId, Title: webpage.Title, Description: webpage.Description};
@@ -240,12 +236,12 @@ function addNewWebpage(webpage, callback) {
 							webpage.Id = result.insertId;
 							if (webpage.Keywords.length > 0) {
 								var keywordAdder = new WordAdder();
-                                console.log("Adding " + webpage.Keywords.length + " keywords.");
+                                //console.log("Adding " + webpage.Keywords.length + " keywords.");
 								keywordAdder.addWords(webpage.Keywords.join(' '), webpage.Id);
 							}
                             if (webpage.Description != null) {
 								var descriptionAdder = new WordAdder();
-                                console.log("Adding description.");
+                                //console.log("Adding description.");
 								descriptionAdder.addWords(webpage.Description, webpage.Id);
                             }
                             callback();
@@ -273,12 +269,12 @@ function updateWebpage(webpage, callback) {
                     webpage.Id = result.insertId;
                     if (webpage.Keywords.length > 0) {
                         var keywordAdder = new WordAdder();
-                        console.log("Adding " + webpage.Keywords.length + " keywords.");
+                        //console.log("Adding " + webpage.Keywords.length + " keywords.");
                         keywordAdder.addWords(webpage.Keywords.join(' '), webpage.Id);
                     }
                     if (webpage.Description != null) {
                         var descriptionAdder = new WordAdder();
-                        console.log("Adding description.");
+                        //console.log("Adding description.");
                         descriptionAdder.addWords(webpage.Description, webpage.Id);
                     }
                     callback();

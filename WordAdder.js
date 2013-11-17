@@ -40,7 +40,7 @@ WordAdder.prototype.addWords = function(string, webpageId) {
 	var limit = 2;
     var index = 0;
 
-    console.log("Adding " + words.length + " words");
+    //console.log("Adding " + words.length + " words");
 	function wordAddLauncher() {
 		while (running < limit && words.length > 0) {
             var word = words.shift();
@@ -50,7 +50,7 @@ WordAdder.prototype.addWords = function(string, webpageId) {
                 if (words.length > 0) {
                     wordAddLauncher();
                 } else if (running <= 0) {
-                    console.log("Done adding words");
+                    //console.log("Done adding words");
                     self.addDAO.close();
                     console.log("Word DAO closed");
                 }
