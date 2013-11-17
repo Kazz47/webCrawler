@@ -94,7 +94,7 @@ WordAdder.prototype.addWord = function(word, index, webpageId, callback) {
                             } else if (result[0]) {
                                 connection.release();
                                 var wordId = result[0].Id;
-                                self.addwordtopage(wordId, index, webpageId, function() {
+                                self.addWordToPage(wordId, index, webpageId, function() {
                                     callback();
                                 });
                             } else {
@@ -106,7 +106,7 @@ WordAdder.prototype.addWord = function(word, index, webpageId, callback) {
                                         callback();
                                     } else {
                                         var wordId = result.insertId;
-                                        self.addwordtopage(wordId, index, webpageId, function() {
+                                        self.addWordToPage(wordId, index, webpageId, function() {
                                             callback();
                                         });
                                     }

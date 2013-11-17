@@ -24,6 +24,6 @@
         }
     },
     "settings": {
-        "maxCrawlSize": "400"
+        "maxCrawlSize": "500"
     }
 }
