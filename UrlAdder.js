@@ -29,7 +29,7 @@ UrlAdder.prototype.addUrls = function(urls) {
 	this.pool = this.addDAO.pool;
 
 	var running = 0;
-	var limit = 2;
+	var limit = 1;
     //console.log("Adding " + urls.length + " URLs");
 	function urlAddLauncher() {
 		while (running < limit && urls.length > 0) {

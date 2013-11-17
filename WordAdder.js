@@ -37,7 +37,7 @@ WordAdder.prototype.addWords = function(string, webpageId) {
 	this.pool = this.addDAO.pool;
 
 	var running = 0;
-	var limit = 2;
+	var limit = 1;
     var index = 0;
 
     //console.log("Adding " + words.length + " words");
