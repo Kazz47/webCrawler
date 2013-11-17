@@ -11,7 +11,7 @@ var flr = require("./FileLineReader");
 var commonMediaFiles = ["zip", "pdf", "mp3", "jpg", "rar", "exe", "wvm", "doc", "avi", "ppt", "mpg", "tif", "wav", "mov", "psd", "wma", "sitx", "sit", "esp", "cdr", "ai", "xls", "mp4", "txt", "m4a", "rmvb", "bmp", "pps", "aif", "pub", "dwg", "gif", "qbb", "mpeg", "indd", "swf", "asf", "png", "dat", "rm", "mdb", "chm", "jar", "dvf", "dss", "dmg", "iso", "flv", "wpd", "cda", "m4b", "7z", "gz", "fla", "qxd", "rtf", "msi", "jpg", "jpeg", "m4v", "ogg", "torrent", "mp2", "bat", "sql"];
 function UrlAdder() {
 	this.DAO = require("./dao");
-	this.addDAO = null; 
+	this.addDAO = null;
 	this.pool = null;
 }
 
@@ -52,9 +52,10 @@ UrlAdder.prototype.addUrls = function(urls) {
 
 // Add new url.
 UrlAdder.prototype.addUrl = function(url, seed, callback) {
+    var self = this;
     var time = 2000;
     function connectionLooper() {
-        this.pool.getConnection(function(err, connection) {
+        self.pool.getConnection(function(err, connection) {
             if (err) {
                 console.log("Add URL (Connection): " + err);
                 if (err.code == "ER_CON_COUNT_ERROR") {
@@ -113,7 +114,7 @@ UrlAdder.prototype.addUrl = function(url, seed, callback) {
 UrlAdder.prototype.addSeed = function(url, callback) {
 	if (!url) return;
 	var self = this;
-	this.pool.getConnection(function(err, connection) {
+	self.pool.getConnection(function(err, connection) {
 		if (err) {
             console.log("Add Seed (Connection): " + err);
             callback(false);
