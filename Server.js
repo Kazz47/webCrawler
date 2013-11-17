@@ -1,4 +1,5 @@
-var restify = require('restify');
+var fs = require("fs")
+var restify = require("restify");
 var config = require("./config.json");
 var UrlAdder = require("./UrlAdder");
 var $ = require("jquery");
@@ -43,9 +44,7 @@ function setMaxCrawlSize(req, res, next) {
         'Content-Type': 'text/plain'
     });
     config.settings.maxCrawlSize = req.query.size;
-    var jsonFile = fopen("./config.json", "w+");
-    fwrite(jsonFile, config);
-    fclose(jsonFile);
+    fs.writeFileSync("./config.json", JSON.stringify(config, null, 4));
     res.write(true.toString());
     res.end();
 }
