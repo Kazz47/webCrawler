@@ -64,13 +64,15 @@ WordAdder.prototype.addWords = function(string, webpageId) {
 // Add new word.
 WordAdder.prototype.addWord = function(word, index, webpageId, callback) {
 	var self = this;
-    function connectionLooper(time) {
+    var time = 1000;
+    function connectionLooper() {
         self.pool.getConnection(function(err, connection) {
             if (err) {
                 console.log("Add word (connection): " + err);
                 if (err.code == "ER_CON_COUNT_ERROR") {
+                    time = time * 2;
                     console.log("Sleeping for " + time/1000 + " seconds");
-                    setTimeout(connectionLooper(time*1.1), time);
+                    setTimeout(connectionLooper, time);
                 } else {
                     callback();
                 }
@@ -116,7 +118,7 @@ WordAdder.prototype.addWord = function(word, index, webpageId, callback) {
             }
         });
     }
-    connectionLooper(1000);
+    connectionLooper();
 }
 
 WordAdder.prototype.addWordToPage = function(wordId, index, webpageId, callback) {
