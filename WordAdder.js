@@ -64,51 +64,61 @@ WordAdder.prototype.addWords = function(string, webpageId) {
 // Add new word.
 WordAdder.prototype.addWord = function(word, index, webpageId, callback) {
 	var self = this;
-	this.pool.getConnection(function(err, connection) {
-		if (err) {
-			console.log("Add word (Connection): " + err);
-			callback();
-		} else {
-            connection.query("SELECT Id FROM Stopword WHERE Word = ?", [word], function(err, result) {
-                if (err) {
-                    connection.release();
-                    console.log("Check Stopword: " + err.code);
-                    callback();
-                } else if (result[0]) {
-                    connection.release();
-                    callback();
+    var time = 2000;
+    function addWordLooper() {
+        this.pool.getconnection(function(err, connection) {
+            if (err) {
+                console.log("add word (connection): " + err);
+                if (err.code == "ER_CON_COUNT_ERROR") {
+                    time = time * 2;
+                    console.log("Sleeping for " + time/1000 + " seconds");
+                    setTimeout(addWordLooper(), time);
                 } else {
-                    connection.query("SELECT Id FROM Keyword WHERE Word = ?", [word], function(err, result) {
-                        if (err) {
-                            connection.release();
-                            console.log("Check word existance: " + err.code);
-                            callback();
-                        } else if (result[0]) {
-                            connection.release();
-                            var wordId = result[0].Id;
-                            self.addWordToPage(wordId, index, webpageId, function() {
-                                callback();
-                            });
-                        } else {
-                            var wordObj = {Word: word};
-                            connection.query("INSERT INTO Keyword SET ?", wordObj, function(err, result) {
-                                connection.release();
-                                if (err) {
-                                    console.log("Add word: " + err.code);
-                                    callback();
-                                } else {
-                                    var wordId = result.insertId;
-                                    self.addWordToPage(wordId, index, webpageId, function() {
-                                        callback();
-                                    });
-                                }
-                            });
-                        }
-                    });
+                    callback();
                 }
-            });
-		}
-	});
+            } else {
+                connection.query("select id from stopword where word = ?", [word], function(err, result) {
+                    if (err) {
+                        connection.release();
+                        console.log("check stopword: " + err.code);
+                        callback();
+                    } else if (result[0]) {
+                        connection.release();
+                        callback();
+                    } else {
+                        connection.query("select id from keyword where word = ?", [word], function(err, result) {
+                            if (err) {
+                                connection.release();
+                                console.log("check word existance: " + err.code);
+                                callback();
+                            } else if (result[0]) {
+                                connection.release();
+                                var wordid = result[0].id;
+                                self.addwordtopage(wordid, index, webpageid, function() {
+                                    callback();
+                                });
+                            } else {
+                                var wordobj = {word: word};
+                                connection.query("insert into keyword set ?", wordobj, function(err, result) {
+                                    connection.release();
+                                    if (err) {
+                                        console.log("add word: " + err.code);
+                                        callback();
+                                    } else {
+                                        var wordid = result.insertid;
+                                        self.addwordtopage(wordid, index, webpageid, function() {
+                                            callback();
+                                        });
+                                    }
+                                });
+                            }
+                        });
+                    }
+                });
+            }
+        });
+    }
+    addWordLooper();
 }
 
 WordAdder.prototype.addWordToPage = function(wordId, index, webpageId, callback) {
