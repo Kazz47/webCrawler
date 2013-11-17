@@ -66,7 +66,7 @@ WordAdder.prototype.addWord = function(word, index, webpageId, callback) {
 	var self = this;
     var time = 2000;
     function addWordLooper() {
-        self.pool.getconnection(function(err, connection) {
+        self.pool.getConnection(function(err, connection) {
             if (err) {
                 console.log("add word (connection): " + err);
                 if (err.code == "ER_CON_COUNT_ERROR") {
