@@ -104,11 +104,11 @@ function getWebpages(req, res, next) {
             var selectQuery;
             var numRows;
             var lastPage;
-            var start = (page-1)*displayMax;
+            var start = 0;
             var end = displayMax;
             if (!queryString) {
-                countQuery = "SELECT COUNT(*) FROM Webpage LIMIT ?, ?";
-                countQueryParams = [start, end];
+                countQuery = "SELECT COUNT(*) AS c FROM Webpage";
+                countQueryParams = [];
 
                 selectQuery = "SELECT w.Id, w.Title, u.URL FROM Webpage AS w JOIN URL AS u ON u.Id = w.URLId LIMIT ?, ?";
                 selectQueryParams = [start, end];
@@ -120,9 +120,9 @@ function getWebpages(req, res, next) {
                 }
                 queryString = words.join("|");
 
-                countQuery = "SELECT COUNT(*) FROM Webpage AS w JOIN WebpageKeywordJoin AS wkj ON w.Id = wkj.WebpageId JOIN Keyword AS k ON wkj.KeywordId = k.Id WHERE k.Word REGEXP ?";
+                countQuery = "SELECT COUNT(*) AS c FROM Webpage AS w JOIN WebpageKeywordJoin AS wkj ON w.Id = wkj.WebpageId JOIN Keyword AS k ON wkj.KeywordId = k.Id WHERE k.Word REGEXP ?";
                 //countQuery = "SELECT COUNT((SELECT (LN(wkj.Num+1) * (SELECT (SELECT COUNT(*) FROM Webpage)/(SELECT COUNT(*) FROM Webpage AS w LEFT JOIN WebpageKeywordJoin AS wkj ON w.Id = wkj.WebpageId LEFT JOIN Keyword AS k2 ON k2.Id = wkj.KeywordId WHERE k2.Word = k.Word) AS QUOTIENT)) AS sum) FROM WebpageKeywordJoin as wkj LEFT JOIN Keyword AS k ON wkj.KeywordId = k.Id WHERE wkj.WebpageId = w.Id AND k.Word REGEXP ?) AS sum FROM Webpage AS w JOIN URL AS u ON u.Id = w.URLId HAVING sum IS NOT NULL ORDER BY sum DESC LIMIT ?, ?";
-                countQueryParams = [queryString, start, end];
+                countQueryParams = [queryString];
 
                 selectQuery = "SELECT w.Id, w.Title, u.URL FROM Webpage AS w JOIN WebpageKeywordJoin AS wkj ON w.Id = wkj.WebpageId JOIN Keyword AS k ON wkj.KeywordId = k.Id JOIN URL AS u ON u.Id = w.URLId WHERE k.Word REGEXP ? GROUP BY w.Id ORDER BY SUM(LN(DF)) DESC LIMIT ?, ?";
                 //selectQuery = "SELECT w.Id, w.Title, u.URL, (SELECT (LN(wkj.Num+1) * (SELECT (SELECT COUNT(*) FROM Webpage)/(SELECT COUNT(*) FROM Webpage AS w LEFT JOIN WebpageKeywordJoin AS wkj ON w.Id = wkj.WebpageId LEFT JOIN Keyword AS k2 ON k2.Id = wkj.KeywordId WHERE k2.Word = k.Word) AS QUOTIENT)) AS sum FROM WebpageKeywordJoin as wkj LEFT JOIN Keyword AS k ON wkj.KeywordId = k.Id WHERE wkj.WebpageId = w.Id AND k.Word REGEXP ?) AS sum FROM Webpage AS w JOIN URL AS u ON u.Id = w.URLId HAVING sum IS NOT NULL ORDER BY sum DESC LIMIT ?, ?";
@@ -138,7 +138,11 @@ function getWebpages(req, res, next) {
                     if (lastPage < 1) lastPage = 1;
                     else if (page > lastPage) page = lastPage;
                     start = (page-1)*displayMax;
-                    end = displayMax;
+
+if (!queryString)
+selectQueryParams[0] = start;
+else
+selectQueryParams[1] = start;
 
                     connection.query(selectQuery, selectQueryParams, function(err, rows) {
                         connection.release();
