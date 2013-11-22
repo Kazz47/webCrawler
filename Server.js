@@ -104,7 +104,7 @@ function getWebpages(req, res, next) {
             var selectQuery;
             var numRows;
             var lastPage;
-            var start = 0;
+            var start = (page-1)*displayMax;
             var end = displayMax;
             if (!queryString) {
                 countQuery = "SELECT COUNT(*) FROM Webpage LIMIT ?, ?";
