@@ -139,10 +139,8 @@ function getWebpages(req, res, next) {
                     else if (page > lastPage) page = lastPage;
                     start = (page-1)*displayMax;
 
-if (!queryString)
-selectQueryParams[0] = start;
-else
-selectQueryParams[1] = start;
+                    if (!queryString) selectQueryParams[0] = start;
+                    else selectQueryParams[1] = start;
 
                     connection.query(selectQuery, selectQueryParams, function(err, rows) {
                         connection.release();
