@@ -53,7 +53,7 @@ function getModal(req, res, next) {
     var modal;
     var webpageId = req.query.id;
     console.log(webpageId);
-    res.header('Access-Control-Allow-Origin', 'htt://people.cs.und.edu');
+    res.header('Access-Control-Allow-Origin', 'http://people.cs.und.edu');
     pool.getConnection(function(err, connection) {
         if (err) {
             console.log("Modal (connection): " + err);
