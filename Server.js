@@ -1,3 +1,4 @@
+var stemmer = require("porter-stemmer").stemmer;
 var fs = require("fs")
 var restify = require("restify");
 var config = require("./config.json");
@@ -113,7 +114,11 @@ function getWebpages(req, res, next) {
                 selectQueryParams = [start, end];
             } else {
                 queryString = queryString.trim();
-                queryString = queryString.replace(" ", "|");
+                words = queryString.split(" ");
+                for (var i=0; i<words.length; i++) {
+                    words[i] = stemmer(words[i].replace(/^[']|[']$/, "").toLowerCase());
+                }
+                queryString = words.join("|");
 
                 countQuery = "SELECT COUNT(*) FROM Webpage AS w JOIN WebpageKeywordJoin AS wkj ON w.Id = wkj.WebpageId JOIN Keyword AS k ON wkj.KeywordId = k.Id WHERE k.Word REGEXP ?";
                 //countQuery = "SELECT COUNT((SELECT (LN(wkj.Num+1) * (SELECT (SELECT COUNT(*) FROM Webpage)/(SELECT COUNT(*) FROM Webpage AS w LEFT JOIN WebpageKeywordJoin AS wkj ON w.Id = wkj.WebpageId LEFT JOIN Keyword AS k2 ON k2.Id = wkj.KeywordId WHERE k2.Word = k.Word) AS QUOTIENT)) AS sum) FROM WebpageKeywordJoin as wkj LEFT JOIN Keyword AS k ON wkj.KeywordId = k.Id WHERE wkj.WebpageId = w.Id AND k.Word REGEXP ?) AS sum FROM Webpage AS w JOIN URL AS u ON u.Id = w.URLId HAVING sum IS NOT NULL ORDER BY sum DESC LIMIT ?, ?";
