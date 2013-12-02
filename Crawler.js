@@ -55,7 +55,7 @@ function crawlOutdatedPages(depth) {
 								crawlerDAO.close();
 							} else {
 								var running = 0;
-								var limit = 1;
+								var limit = 5;
 								function urlParseLauncher() {
 									while (running < limit && rows.length > 0) {
 										var next = rows.shift();
@@ -151,7 +151,7 @@ function getSiteHeaderInfo(window, url, callback) {
 		webpage.Description = descriptionTag.content.trim();
 	if (keywordsTag)
         webpage.Keywords = webpage.Keywords.concat(keywordsTag.content.trim().split(' '));
-    webpage.Keywords = webpage.Keywords.concat(window.$("body").text().trim().replace(/\s+/g,' ').split(' '));
+    //webpage.Keywords = webpage.Keywords.concat(window.$("body").text().trim().replace(/\s+/g,' ').split(' '));
 
 	checkWebpage(webpage, function(err) {
 		callback(err);
