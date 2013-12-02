@@ -55,7 +55,7 @@ function crawlOutdatedPages(depth) {
 								crawlerDAO.close();
 							} else {
 								var running = 0;
-								var limit = 5;
+								var limit = 1;
 								function urlParseLauncher() {
 									while (running < limit && rows.length > 0) {
 										var next = rows.shift();
