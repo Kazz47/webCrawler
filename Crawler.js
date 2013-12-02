@@ -40,7 +40,7 @@ function crawlOutdatedPages(depth) {
 		else {
 			connection.query("SELECT COUNT(*) AS c FROM Webpage", function(err , result) {
 				if (result[0].c < config.settings.maxCrawlSize) {
-					connection.query("SELECT u.Id, u.URL FROM URL AS u LEFT JOIN Webpage AS w ON u.Id = w.URLId WHERE w.URLId IS NULL", function(err, rows) {
+					connection.query("SELECT u.Id, u.URL FROM URL AS u LEFT JOIN Webpage AS w ON u.Id = w.URLId WHERE w.URLId IS NULL LIMIT 10", function(err, rows) {
                         connection.release();
 						if (err) {
 							console.log(err);
