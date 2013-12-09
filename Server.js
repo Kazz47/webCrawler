@@ -227,7 +227,7 @@ server.get("/pageCount", getWebpageCount);
 server.get("/crawlSize", getMaxCrawlSize);
 server.get("/setCrawlSize", setMaxCrawlSize);
 server.get("/modal", getModal);
-server.get("/indexes", getWebpages);
+server.get("/indexes", getIndexes);
 server.get("/webpages", getWebpages);
 server.get("/addSeed", addSeed);
 server.get("/clear", clearDB);
