@@ -95,7 +95,7 @@ function getIndexes(req, res, next) {
         if (err) {
             console.log("Webpages (connection): " + err);
         } else {
-            selectQuery = "SELECT wkj.Id k.Word, w.Title FROM Keyword AS k LEFT JOIN WebpageKeywordJoin AS wkj ON wkj.KeywordId = k.Id LEFT JOIN Webpage AS w ON wkj.WebpageId = w.Id";
+            selectQuery = "SELECT k.Word, w.Title FROM Keyword AS k LEFT JOIN WebpageKeywordJoin AS wkj ON wkj.KeywordId = k.Id LEFT JOIN Webpage AS w ON wkj.WebpageId = w.Id";
             connection.query(selectQuery, function(err, rows) {
                 connection.release();
                 if (err) {
