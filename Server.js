@@ -86,6 +86,31 @@ function getModal(req, res, next) {
     });
 }
 
+function getIndexes(req, res, next) {
+    var indexes = [];
+
+    res.header('Access-Control-Allow-Origin', 'http://people.cs.und.edu');
+
+    pool.getConnection(function(err, connection) {
+        if (err) {
+            console.log("Webpages (connection): " + err);
+        } else {
+            selectQuery = "SELECT wkj.Id k.Word, w.Title FROM Keyword AS k LEFT JOIN WebpageKeywordJoin AS wkj ON wkj.KeywordId = k.Id LEFT JOIN Webpage AS w ON wkj.WebpageId = w.Id";
+            connection.query(selectQuery, function(err, rows) {
+                connection.release();
+                if (err) {
+                    console.log("SelectWebpages: " + err);
+                } else {
+                    for(var i=0; i<rows.length; i++) {
+                        indexes.push(rows[i]);
+                    }
+                    res.send(indexes);
+                }
+            });
+        }
+    });
+}
+
 function getWebpages(req, res, next) {
     var webpages = [];
     var page = parseInt(req.query.page);
@@ -149,7 +174,7 @@ function getWebpages(req, res, next) {
                         } else {
                             var index = start+1;
                             for(var i=0; i<rows.length; i++) {
-                            webpages.push(rows[i]);
+                                webpages.push(rows[i]);
                             }
                             res.send(webpages);
                         }
