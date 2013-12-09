@@ -87,7 +87,7 @@ UrlAdder.prototype.addUrl = function(url, seed, callback) {
                             function urlAddLauncher() {
                                 connection.query("INSERT INTO URL SET ?", urlObj, function(err, result) {
                                     if(err && err.code != "ER_DUP_ENTRY") console.log("Add URL: " + err.code);
-                                    if(err && err.code == "ER_CON_COUNT_ERRhttp://people.cs.und.edu/~wenchen/course/515/OR") {
+                                    if(err && err.code == "ER_CON_COUNT_ERROR") {
                                         time = time * 2;
                                         console.log("Sleep for " + time);
                                         setTimeout(urlAddLauncher(), time);
