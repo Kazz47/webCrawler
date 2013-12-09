@@ -151,7 +151,7 @@ function getSiteHeaderInfo(window, url, callback) {
 		webpage.Description = descriptionTag.content.trim();
 	if (keywordsTag)
         webpage.Keywords = webpage.Keywords.concat(keywordsTag.content.trim().split(' '));
-    //webpage.Keywords = webpage.Keywords.concat(window.$("body").text().trim().replace(/\s+/g,' ').split(' '));
+    webpage.Keywords = webpage.Keywords.concat(window.$("body").text().trim().replace(/\s+/g,' ').split(' '));
 
 	checkWebpage(webpage, function(err) {
 		callback(err);
@@ -267,6 +267,11 @@ function updateWebpage(webpage, callback) {
 					callback(err);
 				} else {
                     webpage.Id = result.insertId;
+                    if (webpage.Title.length > 0) {
+                        var titleAdder = new WordAdder();
+                        //console.log("Adding " + webpage.Title.length + " keywords.");
+                        keywordAdder.addWords(webpage.Title.join(' '), webpage.Id);
+                    }
                     if (webpage.Keywords.length > 0) {
                         var keywordAdder = new WordAdder();
                         //console.log("Adding " + webpage.Keywords.length + " keywords.");
