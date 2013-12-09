@@ -69,7 +69,8 @@ UrlAdder.prototype.addUrl = function(url, seed, callback) {
             else {
                 hashIndex = url.indexOf("#");
                 if (hashIndex > 0) url = url.substring(0, hashIndex);
-                url = url.trim().replace(/\/+$/, "");
+                url = url.trim();
+                //url = url.replace(/\/+$/, ""); // Replace the final '/'
                 var regex = /.+\.([^?]+)(\?|$)/;
                 var result = url.match(regex);
                 if (commonMediaFiles.indexOf(result[1]) < 0) {
