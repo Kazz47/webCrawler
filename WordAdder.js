@@ -15,7 +15,7 @@ WordAdder.prototype.wordSplitter = function(string) {
 	var words = this.removeSpecialCharacters(string).split(" ");
 	for (var i=0; i<words.length; i++) {
 		words[i] = stemmer(words[i].replace(/^[']|[']$/, "").toLowerCase());
-        if (words[i].trim() === "") {
+        if (words[i].trim() === "" || words[i].length > 20) {
             words.splice(i, 1);
             i--;
         }
